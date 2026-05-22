@@ -176,6 +176,8 @@ export type PeersDataCorrelationMatrix = {[key: string]: {[key: string]: number}
 export interface PeersData {
   ticker: string;
   sector: string;
+  /** @nullable */
+  summary?: string | null;
   peers: PeerStock[];
   correlationMatrix?: PeersDataCorrelationMatrix;
 }
@@ -189,6 +191,12 @@ export interface AnalystAction {
   /** @nullable */
   date?: string | null;
   action: string;
+  /** @nullable */
+  priceTargetAction?: string | null;
+  /** @nullable */
+  currentPriceTarget?: number | null;
+  /** @nullable */
+  priorPriceTarget?: number | null;
 }
 
 export interface AnalystData {

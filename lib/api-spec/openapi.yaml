@@ -434,6 +434,8 @@ components:
           type: string
         sector:
           type: string
+        summary:
+          type: ["string", "null"]
         peers:
           type: array
           items:
@@ -459,6 +461,12 @@ components:
           type: ["string", "null"]
         action:
           type: string
+        priceTargetAction:
+          type: ["string", "null"]
+        currentPriceTarget:
+          type: ["number", "null"]
+        priorPriceTarget:
+          type: ["number", "null"]
 
     AnalystData:
       type: object

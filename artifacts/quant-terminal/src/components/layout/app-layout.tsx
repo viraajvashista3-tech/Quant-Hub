@@ -1,13 +1,15 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useTicker } from "@/lib/ticker-context";
+import { useProMode } from "@/lib/pro-mode-context";
 import { Input } from "@/components/ui/input";
-import { Search, Activity, BookOpen, Users, BarChart2, Compass } from "lucide-react";
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider } from "@/components/ui/sidebar";
+import { Search, Activity, BookOpen, Users, BarChart2, Compass, Zap } from "lucide-react";
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarFooter } from "@/components/ui/sidebar";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { activeTicker, setActiveTicker } = useTicker();
+  const { isPro, toggle } = useProMode();
 
   return (
     <SidebarProvider>
@@ -28,6 +30,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               />
             </div>
           </SidebarHeader>
+
           <SidebarContent className="p-2">
             <SidebarMenu>
               <SidebarMenuItem>
@@ -72,12 +75,34 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
+
+          <SidebarFooter className="p-4 border-t border-border">
+            <button
+              onClick={toggle}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-none border transition-colors ${
+                isPro
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:border-border/80"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Zap className={`h-4 w-4 ${isPro ? "text-primary" : ""}`} />
+                <span className="text-xs font-semibold uppercase tracking-widest">
+                  {isPro ? "Pro Mode" : "Simple Mode"}
+                </span>
+              </div>
+              <div className={`relative w-9 h-5 rounded-full transition-colors ${isPro ? "bg-primary" : "bg-muted"}`}>
+                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${isPro ? "left-4" : "left-0.5"}`} />
+              </div>
+            </button>
+            <p className="text-[10px] text-muted-foreground mt-2 text-center">
+              {isPro ? "Advanced terminology & metrics" : "Plain-English labels"}
+            </p>
+          </SidebarFooter>
         </Sidebar>
-        
+
         <main className="flex-1 flex flex-col overflow-hidden relative">
-          {/* Subtle grid background pattern */}
           <div className="absolute inset-0 pointer-events-none opacity-5" style={{ backgroundImage: 'linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-          
           <div className="flex-1 overflow-auto p-6 relative z-10">
             {children}
           </div>

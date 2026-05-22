@@ -1,4 +1,5 @@
 import { useTicker } from "@/lib/ticker-context";
+import { useLabels } from "@/lib/pro-mode-context";
 import { useGetStockFundamentals, getGetStockFundamentalsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -6,6 +7,7 @@ import { formatCurrency, formatLargeNumber, formatPercent } from "@/lib/format";
 
 export default function Fundamentals() {
   const { activeTicker } = useTicker();
+  const label = useLabels();
 
   const { data: fund, isLoading } = useGetStockFundamentals(activeTicker, {
     query: { enabled: !!activeTicker, queryKey: getGetStockFundamentalsQueryKey(activeTicker) }
@@ -13,9 +15,9 @@ export default function Fundamentals() {
 
   if (!activeTicker) return <div className="p-8 text-center text-muted-foreground">Select a ticker to begin analysis.</div>;
 
-  const MetricRow = ({ label, value }: { label: string, value: React.ReactNode }) => (
+  const MetricRow = ({ lbl, value }: { lbl: string; value: React.ReactNode }) => (
     <div className="flex justify-between items-center py-2 border-b border-border/50 hover:bg-muted/20 transition-colors px-2">
-      <span className="text-xs text-muted-foreground uppercase">{label}</span>
+      <span className="text-xs text-muted-foreground uppercase">{lbl}</span>
       <span className="font-mono text-sm">{value}</span>
     </div>
   );
@@ -51,12 +53,12 @@ export default function Fundamentals() {
                 <CardTitle className="text-sm font-medium text-foreground uppercase tracking-widest text-primary">Valuation</CardTitle>
               </CardHeader>
               <CardContent className="p-2">
-                <MetricRow label="Market Cap" value={formatLargeNumber(fund.marketCap)} />
-                <MetricRow label="P/E Ratio (TTM)" value={fund.pe?.toFixed(2) || "-"} />
-                <MetricRow label="Forward P/E" value={fund.forwardPe?.toFixed(2) || "-"} />
-                <MetricRow label="PEG Ratio" value={fund.peg?.toFixed(2) || "-"} />
-                <MetricRow label="Price / Book" value={fund.priceToBook?.toFixed(2) || "-"} />
-                <MetricRow label="EV / EBITDA" value={fund.evToEbitda?.toFixed(2) || "-"} />
+                <MetricRow lbl={label("marketCap")} value={formatLargeNumber(fund.marketCap)} />
+                <MetricRow lbl={label("pe")} value={fund.pe?.toFixed(2) || "-"} />
+                <MetricRow lbl={label("forwardPe")} value={fund.forwardPe?.toFixed(2) || "-"} />
+                <MetricRow lbl={label("peg")} value={fund.peg?.toFixed(2) || "-"} />
+                <MetricRow lbl={label("pb")} value={fund.priceToBook?.toFixed(2) || "-"} />
+                <MetricRow lbl={label("evEbitda")} value={fund.evToEbitda?.toFixed(2) || "-"} />
               </CardContent>
             </Card>
 
@@ -65,12 +67,12 @@ export default function Fundamentals() {
                 <CardTitle className="text-sm font-medium text-foreground uppercase tracking-widest text-primary">Profitability & Growth</CardTitle>
               </CardHeader>
               <CardContent className="p-2">
-                <MetricRow label="Profit Margin" value={fund.profitMargins ? formatPercent(fund.profitMargins * 100) : "-"} />
-                <MetricRow label="Operating Margin" value={fund.operatingMargins ? formatPercent(fund.operatingMargins * 100) : "-"} />
-                <MetricRow label="Return on Assets" value={fund.returnOnAssets ? formatPercent(fund.returnOnAssets * 100) : "-"} />
-                <MetricRow label="Return on Equity" value={fund.returnOnEquity ? formatPercent(fund.returnOnEquity * 100) : "-"} />
-                <MetricRow label="Revenue Growth (YOY)" value={fund.revenueGrowth ? formatPercent(fund.revenueGrowth * 100) : "-"} />
-                <MetricRow label="Earnings Growth (YOY)" value={fund.earningsGrowth ? formatPercent(fund.earningsGrowth * 100) : "-"} />
+                <MetricRow lbl={label("profitMargin")} value={fund.profitMargins ? formatPercent(fund.profitMargins * 100) : "-"} />
+                <MetricRow lbl={label("opMargin")} value={fund.operatingMargins ? formatPercent(fund.operatingMargins * 100) : "-"} />
+                <MetricRow lbl={label("roa")} value={fund.returnOnAssets ? formatPercent(fund.returnOnAssets * 100) : "-"} />
+                <MetricRow lbl={label("roe")} value={fund.returnOnEquity ? formatPercent(fund.returnOnEquity * 100) : "-"} />
+                <MetricRow lbl={label("revGrowth")} value={fund.revenueGrowth ? formatPercent(fund.revenueGrowth * 100) : "-"} />
+                <MetricRow lbl={label("epsGrowth")} value={fund.earningsGrowth ? formatPercent(fund.earningsGrowth * 100) : "-"} />
               </CardContent>
             </Card>
 
@@ -79,12 +81,12 @@ export default function Fundamentals() {
                 <CardTitle className="text-sm font-medium text-foreground uppercase tracking-widest text-primary">Financial Health</CardTitle>
               </CardHeader>
               <CardContent className="p-2">
-                <MetricRow label="Total Debt / Equity" value={fund.debtToEquity?.toFixed(2) || "-"} />
-                <MetricRow label="Current Ratio" value={fund.currentRatio?.toFixed(2) || "-"} />
-                <MetricRow label="Quick Ratio" value={fund.quickRatio?.toFixed(2) || "-"} />
-                <MetricRow label="Beta (5Y)" value={fund.beta?.toFixed(2) || "-"} />
-                <MetricRow label="Dividend Yield" value={fund.dividendYield ? formatPercent(fund.dividendYield * 100) : "-"} />
-                <MetricRow label="Diluted EPS" value={fund.eps ? formatCurrency(fund.eps) : "-"} />
+                <MetricRow lbl={label("debtEquity")} value={fund.debtToEquity?.toFixed(2) || "-"} />
+                <MetricRow lbl={label("currentRatio")} value={fund.currentRatio?.toFixed(2) || "-"} />
+                <MetricRow lbl={label("quickRatio")} value={fund.quickRatio?.toFixed(2) || "-"} />
+                <MetricRow lbl={label("beta")} value={fund.beta?.toFixed(2) || "-"} />
+                <MetricRow lbl={label("dividendYield")} value={fund.dividendYield ? formatPercent(fund.dividendYield * 100) : "-"} />
+                <MetricRow lbl={label("eps")} value={fund.eps ? formatCurrency(fund.eps) : "-"} />
               </CardContent>
             </Card>
 
@@ -93,11 +95,11 @@ export default function Fundamentals() {
                 <CardTitle className="text-sm font-medium text-foreground uppercase tracking-widest text-primary">Trading Info</CardTitle>
               </CardHeader>
               <CardContent className="p-2">
-                <MetricRow label="52 Week High" value={formatCurrency(fund.fiftyTwoWeekHigh)} />
-                <MetricRow label="52 Week Low" value={formatCurrency(fund.fiftyTwoWeekLow)} />
-                <MetricRow label="Short Ratio" value={fund.shortRatio?.toFixed(2) || "-"} />
-                <MetricRow label="Short % of Float" value={fund.shortPercentOfFloat ? formatPercent(fund.shortPercentOfFloat * 100) : "-"} />
-                <MetricRow label="Institutional Ownership" value={fund.institutionalOwnership ? formatPercent(fund.institutionalOwnership * 100) : "-"} />
+                <MetricRow lbl="52-Week High" value={formatCurrency(fund.fiftyTwoWeekHigh)} />
+                <MetricRow lbl="52-Week Low" value={formatCurrency(fund.fiftyTwoWeekLow)} />
+                <MetricRow lbl={label("shortRatio")} value={fund.shortRatio?.toFixed(2) || "-"} />
+                <MetricRow lbl={label("shortFloat")} value={fund.shortPercentOfFloat ? formatPercent(fund.shortPercentOfFloat * 100) : "-"} />
+                <MetricRow lbl={label("institutionalOwn")} value={fund.institutionalOwnership ? formatPercent(fund.institutionalOwnership * 100) : "-"} />
               </CardContent>
             </Card>
           </div>

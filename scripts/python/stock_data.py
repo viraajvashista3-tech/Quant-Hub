@@ -271,6 +271,100 @@ def cmd_news(ticker):
     print(json.dumps(result))
 
 
+def generate_peers_summary(ticker, peer_data, sector):
+    """Generate a plain-English paragraph comparing the ticker to its sector peers."""
+    try:
+        subject = next((p for p in peer_data if p["ticker"] == ticker.upper()), None)
+        if not subject:
+            return None
+        peers_only = [p for p in peer_data if p["ticker"] != ticker.upper()]
+
+        def peer_median(key):
+            vals = [p[key] for p in peers_only if p.get(key) is not None]
+            return float(np.median(vals)) if vals else None
+
+        name = subject.get("name") or ticker.upper()
+        pe = subject.get("pe")
+        med_pe = peer_median("pe")
+        margins = subject.get("profitMargins")
+        med_margins = peer_median("profitMargins")
+        beta = subject.get("beta")
+        med_beta = peer_median("beta")
+        roe = subject.get("returnOnEquity")
+        med_roe = peer_median("returnOnEquity")
+        de = subject.get("debtToEquity")
+        med_de = peer_median("debtToEquity")
+
+        parts = []
+
+        # Valuation
+        if pe is not None and med_pe is not None:
+            diff_pct = ((pe - med_pe) / med_pe) * 100 if med_pe else 0
+            if abs(diff_pct) > 10:
+                direction = "commands a premium" if diff_pct > 0 else "trades at a discount"
+                parts.append(
+                    f"{name} {direction} valuation vs its {sector} peers "
+                    f"(P/E {pe:.1f}x vs sector median {med_pe:.1f}x)"
+                )
+            else:
+                parts.append(f"{name} trades in line with {sector} peers on valuation (P/E {pe:.1f}x)")
+
+        # Profitability
+        if margins is not None and med_margins is not None:
+            if margins > med_margins * 1.1:
+                parts.append(
+                    f"it leads the group on profitability with {margins*100:.1f}% net margins "
+                    f"(sector median {med_margins*100:.1f}%)"
+                )
+            elif margins < med_margins * 0.9:
+                parts.append(
+                    f"its {margins*100:.1f}% net margins trail the sector median of {med_margins*100:.1f}%"
+                )
+            else:
+                parts.append(f"profit margins are in line with the sector at {margins*100:.1f}%")
+
+        # Risk / Beta
+        if beta is not None and med_beta is not None:
+            if beta > med_beta * 1.15:
+                parts.append(
+                    f"the stock carries above-average market risk (beta {beta:.2f} vs sector {med_beta:.2f})"
+                )
+            elif beta < med_beta * 0.85:
+                parts.append(
+                    f"it is less volatile than its peers (beta {beta:.2f} vs sector {med_beta:.2f})"
+                )
+
+        # Capital efficiency
+        if roe is not None and med_roe is not None:
+            if roe > med_roe * 1.1:
+                parts.append(
+                    f"and generates stronger returns on equity ({roe*100:.1f}% vs sector {med_roe*100:.1f}%)"
+                )
+            elif roe < med_roe * 0.9:
+                parts.append(
+                    f"though return on equity lags peers ({roe*100:.1f}% vs {med_roe*100:.1f}%)"
+                )
+
+        # Debt
+        if de is not None and med_de is not None:
+            if de > med_de * 1.3:
+                parts.append(
+                    f"Debt levels are elevated relative to peers (D/E {de:.1f} vs {med_de:.1f})"
+                )
+            elif de < med_de * 0.7:
+                parts.append(
+                    f"The balance sheet is relatively clean with lower debt than peers (D/E {de:.1f} vs {med_de:.1f})"
+                )
+
+        if not parts:
+            return f"{name} shows broadly similar characteristics to its {sector} sector peers."
+
+        summary = ". ".join(p.capitalize() for p in parts) + "."
+        return summary
+    except Exception:
+        return None
+
+
 def cmd_peers(ticker, period="1y"):
     tk = yf.Ticker(ticker)
     info = tk.info
@@ -288,7 +382,6 @@ def cmd_peers(ticker, period="1y"):
     corr_dict = {}
     try:
         raw = yf.download(compare_list, period=yf_period, progress=False, auto_adjust=True)
-        # Extract Close prices
         if isinstance(raw.columns, pd.MultiIndex):
             price_data = raw["Close"]
         else:
@@ -307,7 +400,7 @@ def cmd_peers(ticker, period="1y"):
 
     # Peer fundamentals
     peer_data = []
-    for t in compare_list[:6]:
+    for t in compare_list[:7]:
         try:
             ti = yf.Ticker(t).info
             peer_data.append({
@@ -326,9 +419,12 @@ def cmd_peers(ticker, period="1y"):
         except Exception:
             peer_data.append({"ticker": t})
 
+    summary = generate_peers_summary(ticker, peer_data, sector or "sector")
+
     result = {
         "ticker": ticker.upper(),
         "sector": sector or "Unknown",
+        "summary": summary,
         "peers": peer_data,
         "correlationMatrix": corr_dict,
     }
@@ -348,14 +444,27 @@ def cmd_analyst(ticker):
         upgrades = tk.upgrades_downgrades
         if upgrades is not None and not upgrades.empty:
             upgrades = upgrades.reset_index()
-            for _, row in upgrades.head(15).iterrows():
-                date_val = str(row.get("GradeDate", "")) if "GradeDate" in row else None
+            for _, row in upgrades.head(20).iterrows():
+                date_val = None
+                if "GradeDate" in row and row["GradeDate"] is not None:
+                    try:
+                        date_val = str(pd.Timestamp(row["GradeDate"]).date())
+                    except Exception:
+                        date_val = str(row["GradeDate"])
+
+                current_target = safe_float(row.get("currentPriceTarget"))
+                prior_target = safe_float(row.get("priorPriceTarget"))
+                target_action = str(row.get("priceTargetAction", "")) or None
+
                 recent_actions.append({
                     "firm": str(row.get("Firm", "")),
                     "toGrade": str(row.get("ToGrade", "")) or None,
                     "fromGrade": str(row.get("FromGrade", "")) or None,
                     "date": date_val,
                     "action": str(row.get("Action", "reiterated")),
+                    "priceTargetAction": target_action,
+                    "currentPriceTarget": current_target,
+                    "priorPriceTarget": prior_target,
                 })
     except Exception:
         pass

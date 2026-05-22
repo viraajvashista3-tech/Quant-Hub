@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TickerProvider } from "@/lib/ticker-context";
+import { ProModeProvider } from "@/lib/pro-mode-context";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useEffect } from "react";
 
@@ -45,12 +46,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TickerProvider>
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
+        <ProModeProvider>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </ProModeProvider>
       </TickerProvider>
     </QueryClientProvider>
   );

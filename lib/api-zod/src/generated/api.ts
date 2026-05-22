@@ -151,6 +151,7 @@ export const GetStockPeersQueryParams = zod.object({
 export const GetStockPeersResponse = zod.object({
   "ticker": zod.string(),
   "sector": zod.string(),
+  "summary": zod.string().nullish(),
   "peers": zod.array(zod.object({
   "ticker": zod.string(),
   "name": zod.string().nullish(),
@@ -188,7 +189,10 @@ export const GetStockAnalystResponse = zod.object({
   "toGrade": zod.string().nullish(),
   "fromGrade": zod.string().nullish(),
   "date": zod.string().nullish(),
-  "action": zod.string()
+  "action": zod.string(),
+  "priceTargetAction": zod.string().nullish(),
+  "currentPriceTarget": zod.number().nullish(),
+  "priorPriceTarget": zod.number().nullish()
 })).optional()
 })
 
