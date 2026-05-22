@@ -3,20 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Quant Terminal API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: stock
+    description: Stock data operations
+  - name: universe
+    description: Stock universe operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +27,469 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /stock/{ticker}:
+    get:
+      operationId: getStockOverview
+      tags: [stock]
+      summary: Get stock overview with quant score
+      parameters:
+        - name: ticker
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stock overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockOverview"
+        "404":
+          description: Ticker not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /stock/{ticker}/history:
+    get:
+      operationId: getStockHistory
+      tags: [stock]
+      summary: Price history with technical indicators
+      parameters:
+        - name: ticker
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [6mo, 1y, 2y, 5y]
+            default: 1y
+      responses:
+        "200":
+          description: Price history with indicators
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockHistory"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /stock/{ticker}/fundamentals:
+    get:
+      operationId: getStockFundamentals
+      tags: [stock]
+      summary: Fundamental financial data
+      parameters:
+        - name: ticker
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Fundamentals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Fundamentals"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /stock/{ticker}/news:
+    get:
+      operationId: getStockNews
+      tags: [stock]
+      summary: Latest news with sentiment analysis
+      parameters:
+        - name: ticker
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: News and sentiment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsData"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /stock/{ticker}/peers:
+    get:
+      operationId: getStockPeers
+      tags: [stock]
+      summary: Sector peers comparison with relative performance
+      parameters:
+        - name: ticker
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [1y, 5y]
+            default: 1y
+      responses:
+        "200":
+          description: Peers data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PeersData"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /stock/{ticker}/analyst:
+    get:
+      operationId: getStockAnalyst
+      tags: [stock]
+      summary: Analyst ratings and price targets
+      parameters:
+        - name: ticker
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Analyst data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalystData"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /universe:
+    get:
+      operationId: getUniverse
+      tags: [universe]
+      summary: Full stock universe grouped by sector
+      responses:
+        "200":
+          description: Universe
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UniverseSector"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    StockOverview:
+      type: object
+      required: [ticker, name, price, change, changePercent, quantScore, signal, sentimentScore, volume, avgVolume, rsi, ma50, ma200, macd, macdSignal, sector, beta]
+      properties:
+        ticker:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        change:
+          type: number
+        changePercent:
+          type: number
+        quantScore:
+          type: number
+        signal:
+          type: string
+          enum: [BUY, HOLD, AVOID]
+        sentimentScore:
+          type: number
+        volume:
+          type: number
+        avgVolume:
+          type: number
+        rsi:
+          type: number
+        ma50:
+          type: number
+        ma200:
+          type: number
+        macd:
+          type: number
+        macdSignal:
+          type: number
+        sector:
+          type: ["string", "null"]
+        beta:
+          type: ["number", "null"]
+        annualizedVolatility:
+          type: ["number", "null"]
+
+    PriceBar:
+      type: object
+      required: [date, open, high, low, close, volume]
+      properties:
+        date:
+          type: string
+        open:
+          type: number
+        high:
+          type: number
+        low:
+          type: number
+        close:
+          type: number
+        volume:
+          type: number
+        ma50:
+          type: ["number", "null"]
+        ma200:
+          type: ["number", "null"]
+        macd:
+          type: ["number", "null"]
+        macdSignal:
+          type: ["number", "null"]
+        rsi:
+          type: ["number", "null"]
+
+    StockHistory:
+      type: object
+      required: [ticker, bars]
+      properties:
+        ticker:
+          type: string
+        bars:
+          type: array
+          items:
+            $ref: "#/components/schemas/PriceBar"
+
+    Fundamentals:
+      type: object
+      required: [ticker, name]
+      properties:
+        ticker:
+          type: string
+        name:
+          type: string
+        marketCap:
+          type: ["number", "null"]
+        pe:
+          type: ["number", "null"]
+        forwardPe:
+          type: ["number", "null"]
+        peg:
+          type: ["number", "null"]
+        priceToBook:
+          type: ["number", "null"]
+        evToEbitda:
+          type: ["number", "null"]
+        debtToEquity:
+          type: ["number", "null"]
+        returnOnEquity:
+          type: ["number", "null"]
+        returnOnAssets:
+          type: ["number", "null"]
+        operatingMargins:
+          type: ["number", "null"]
+        profitMargins:
+          type: ["number", "null"]
+        beta:
+          type: ["number", "null"]
+        dividendYield:
+          type: ["number", "null"]
+        eps:
+          type: ["number", "null"]
+        sector:
+          type: ["string", "null"]
+        industry:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        fiftyTwoWeekHigh:
+          type: ["number", "null"]
+        fiftyTwoWeekLow:
+          type: ["number", "null"]
+        shortRatio:
+          type: ["number", "null"]
+        institutionalOwnership:
+          type: ["number", "null"]
+        shortPercentOfFloat:
+          type: ["number", "null"]
+        revenueGrowth:
+          type: ["number", "null"]
+        earningsGrowth:
+          type: ["number", "null"]
+        currentRatio:
+          type: ["number", "null"]
+        quickRatio:
+          type: ["number", "null"]
+
+    NewsItem:
+      type: object
+      required: [title, url]
+      properties:
+        title:
+          type: string
+        url:
+          type: string
+        publishedAt:
+          type: ["string", "null"]
+        sentiment:
+          type: ["number", "null"]
+
+    NewsData:
+      type: object
+      required: [ticker, sentimentScore, headlines]
+      properties:
+        ticker:
+          type: string
+        sentimentScore:
+          type: number
+        sentimentLabel:
+          type: string
+        headlines:
+          type: array
+          items:
+            $ref: "#/components/schemas/NewsItem"
+
+    PeerStock:
+      type: object
+      required: [ticker]
+      properties:
+        ticker:
+          type: string
+        name:
+          type: ["string", "null"]
+        price:
+          type: ["number", "null"]
+        pe:
+          type: ["number", "null"]
+        forwardPe:
+          type: ["number", "null"]
+        dividendYield:
+          type: ["number", "null"]
+        beta:
+          type: ["number", "null"]
+        marketCap:
+          type: ["number", "null"]
+        profitMargins:
+          type: ["number", "null"]
+        debtToEquity:
+          type: ["number", "null"]
+        returnOnEquity:
+          type: ["number", "null"]
+
+    RelativePerformancePoint:
+      type: object
+      required: [date]
+      properties:
+        date:
+          type: string
+
+    PeersData:
+      type: object
+      required: [ticker, sector, peers]
+      properties:
+        ticker:
+          type: string
+        sector:
+          type: string
+        peers:
+          type: array
+          items:
+            $ref: "#/components/schemas/PeerStock"
+        correlationMatrix:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: number
+
+    AnalystAction:
+      type: object
+      required: [firm, action]
+      properties:
+        firm:
+          type: string
+        toGrade:
+          type: ["string", "null"]
+        fromGrade:
+          type: ["string", "null"]
+        date:
+          type: ["string", "null"]
+        action:
+          type: string
+
+    AnalystData:
+      type: object
+      required: [ticker, consensusRating, numAnalysts]
+      properties:
+        ticker:
+          type: string
+        consensusRating:
+          type: string
+        numAnalysts:
+          type: ["number", "null"]
+        currentPrice:
+          type: ["number", "null"]
+        targetLow:
+          type: ["number", "null"]
+        targetMean:
+          type: ["number", "null"]
+        targetHigh:
+          type: ["number", "null"]
+        recentActions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalystAction"
+
+    UniverseSector:
+      type: object
+      required: [sector, tickers]
+      properties:
+        sector:
+          type: string
+        tickers:
+          type: array
+          items:
+            type: string

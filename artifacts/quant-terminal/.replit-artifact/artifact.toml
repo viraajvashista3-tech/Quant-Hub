@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Quant Terminal"
+version = "1.0.0"
+id = "artifacts/quant-terminal"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24869
+
+[services.development]
+run = "pnpm --filter @workspace/quant-terminal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/quant-terminal", "run", "build" ]
+publicDir = "artifacts/quant-terminal/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24869"
+BASE_PATH = "/"
