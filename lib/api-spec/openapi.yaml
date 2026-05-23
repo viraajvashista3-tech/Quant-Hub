@@ -69,7 +69,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [6mo, 1y, 2y, 5y]
+            enum: [ytd, 6mo, 1y, 2y, 5y]
             default: 1y
       responses:
         "200":

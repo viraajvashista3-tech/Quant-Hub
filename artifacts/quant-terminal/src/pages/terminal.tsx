@@ -19,7 +19,7 @@ import { Progress } from "@/components/ui/progress";
 
 export default function Terminal() {
   const { activeTicker } = useTicker();
-  const [period, setPeriod] = useState<'6mo'|'1y'|'2y'|'5y'>('1y');
+  const [period, setPeriod] = useState<'ytd'|'6mo'|'1y'|'2y'|'5y'>('1y');
   const label = useLabels();
 
   const { data: overview, isLoading: isLoadingOverview } = useGetStockOverview(activeTicker, {
@@ -81,6 +81,7 @@ export default function Terminal() {
             <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Price History & MA</CardTitle>
             <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)} className="h-8">
               <TabsList className="h-8 rounded-none">
+                <TabsTrigger value="ytd" className="rounded-none text-xs">YTD</TabsTrigger>
                 <TabsTrigger value="6mo" className="rounded-none text-xs">6M</TabsTrigger>
                 <TabsTrigger value="1y" className="rounded-none text-xs">1Y</TabsTrigger>
                 <TabsTrigger value="2y" className="rounded-none text-xs">2Y</TabsTrigger>

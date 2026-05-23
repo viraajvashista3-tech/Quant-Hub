@@ -184,7 +184,7 @@ def cmd_overview(ticker):
 
 
 def cmd_history(ticker, period="1y"):
-    period_map = {"6mo": "6mo", "1y": "1y", "2y": "2y", "5y": "5y"}
+    period_map = {"ytd": "ytd", "6mo": "6mo", "1y": "1y", "2y": "2y", "5y": "5y"}
     yf_period = period_map.get(period, "1y")
 
     df = download_single(ticker, period=yf_period)

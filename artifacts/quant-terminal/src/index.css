@@ -67,6 +67,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ── DARK THEME (default) ─────────────────────────────────────────────────── */
 :root, .dark {
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);
@@ -74,7 +75,6 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  /* Dark background: #0a0a0f -> 240 20% 5% */
   --background: 240 20% 5%;
   --foreground: 210 40% 98%;
 
@@ -134,6 +134,85 @@
   --shadow-lg: 0px 2px 0px 0px rgba(0,0,0,0.5), 0px 4px 6px -1px rgba(0,0,0,0.5);
   --shadow-xl: 0px 2px 0px 0px rgba(0,0,0,0.5), 0px 8px 10px -1px rgba(0,0,0,0.5);
   --shadow-2xl: 0px 2px 0px 0px rgba(0,0,0,0.5);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  --sidebar-primary-border: hsl(var(--sidebar-primary));
+  --sidebar-accent-border: hsl(var(--sidebar-accent));
+  --primary-border: hsl(var(--primary));
+  --secondary-border: hsl(var(--secondary));
+  --muted-border: hsl(var(--muted));
+  --accent-border: hsl(var(--accent));
+  --destructive-border: hsl(var(--destructive));
+}
+
+/* ── LIGHT THEME ──────────────────────────────────────────────────────────── */
+.light-mode {
+  --button-outline: rgba(0,0,0, .10);
+  --badge-outline: rgba(0,0,0, .05);
+  --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .06);
+
+  --background: 220 20% 97%;
+  --foreground: 224 30% 10%;
+
+  --border: 220 15% 85%;
+  
+  --card: 0 0% 100%;
+  --card-foreground: 224 30% 10%;
+  --card-border: 220 15% 85%;
+
+  --sidebar: 220 20% 94%;
+  --sidebar-foreground: 224 30% 10%;
+  --sidebar-border: 220 15% 85%;
+  --sidebar-primary: 190 100% 38%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 220 15% 88%;
+  --sidebar-accent-foreground: 224 30% 10%;
+  --sidebar-ring: 190 100% 38%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 30% 10%;
+  --popover-border: 220 15% 85%;
+
+  --primary: 190 100% 38%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 220 15% 90%;
+  --secondary-foreground: 224 30% 10%;
+
+  --muted: 220 15% 90%;
+  --muted-foreground: 220 10% 45%;
+
+  --accent: 220 15% 88%;
+  --accent-foreground: 224 30% 10%;
+
+  --destructive: 0 84% 55%;
+  --destructive-foreground: 0 0% 100%;
+
+  --input: 220 15% 88%;
+  --ring: 190 100% 38%;
+
+  --chart-1: 190 100% 35%;
+  --chart-2: 220 20% 45%;
+  --chart-3: 140 60% 40%;
+  --chart-4: 40 90% 50%;
+  --chart-5: 280 70% 55%;
+
+  --app-font-sans: 'Inter', sans-serif;
+  --app-font-serif: Georgia, serif;
+  --app-font-mono: 'JetBrains Mono', monospace;
+  --radius: .25rem;
+
+  --shadow-2xs: 0px 1px 2px 0px rgba(0,0,0,0.08);
+  --shadow-xs: 0px 1px 3px 0px rgba(0,0,0,0.1);
+  --shadow-sm: 0px 1px 3px 0px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.06);
+  --shadow: 0px 2px 4px 0px rgba(0,0,0,0.08), 0px 1px 2px -1px rgba(0,0,0,0.06);
+  --shadow-md: 0px 4px 6px -1px rgba(0,0,0,0.08), 0px 2px 4px -2px rgba(0,0,0,0.06);
+  --shadow-lg: 0px 10px 15px -3px rgba(0,0,0,0.08), 0px 4px 6px -4px rgba(0,0,0,0.06);
+  --shadow-xl: 0px 20px 25px -5px rgba(0,0,0,0.08), 0px 8px 10px -6px rgba(0,0,0,0.06);
+  --shadow-2xl: 0px 25px 50px -12px rgba(0,0,0,0.12);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 

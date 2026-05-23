@@ -4,14 +4,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TickerProvider } from "@/lib/ticker-context";
 import { ProModeProvider } from "@/lib/pro-mode-context";
+import { ThemeProvider } from "@/lib/theme-context";
 import { AppLayout } from "@/components/layout/app-layout";
-import { useEffect } from "react";
 
 import Terminal from "@/pages/terminal";
 import Browse from "@/pages/browse";
 import Analyst from "@/pages/analyst";
 import Peers from "@/pages/peers";
 import Fundamentals from "@/pages/fundamentals";
+import AiChat from "@/pages/ai-chat";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -32,6 +33,7 @@ function Router() {
         <Route path="/analyst" component={Analyst} />
         <Route path="/peers" component={Peers} />
         <Route path="/fundamentals" component={Fundamentals} />
+        <Route path="/ai" component={AiChat} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
@@ -39,22 +41,20 @@ function Router() {
 }
 
 function App() {
-  useEffect(() => {
-    document.documentElement.classList.add('dark');
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
-      <TickerProvider>
-        <ProModeProvider>
-          <TooltipProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <Router />
-            </WouterRouter>
-            <Toaster />
-          </TooltipProvider>
-        </ProModeProvider>
-      </TickerProvider>
+      <ThemeProvider>
+        <TickerProvider>
+          <ProModeProvider>
+            <TooltipProvider>
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                <Router />
+              </WouterRouter>
+              <Toaster />
+            </TooltipProvider>
+          </ProModeProvider>
+        </TickerProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

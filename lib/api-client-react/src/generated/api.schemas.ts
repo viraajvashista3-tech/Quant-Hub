@@ -228,6 +228,7 @@ export type GetStockHistoryPeriod = typeof GetStockHistoryPeriod[keyof typeof Ge
 
 
 export const GetStockHistoryPeriod = {
+  ytd: 'ytd',
   '6mo': '6mo',
   '1y': '1y',
   '2y': '2y',

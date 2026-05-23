@@ -1,19 +1,106 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useTicker } from "@/lib/ticker-context";
 import { useProMode } from "@/lib/pro-mode-context";
+import { useTheme, ACCENT_COLORS } from "@/lib/theme-context";
 import { Input } from "@/components/ui/input";
-import { Search, Activity, BookOpen, Users, BarChart2, Compass, Zap } from "lucide-react";
+import { Search, Activity, BookOpen, Users, BarChart2, Compass, Zap, Sun, Moon, Bot, Settings2, X } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarFooter } from "@/components/ui/sidebar";
+
+function SettingsPanel({ onClose }: { onClose: () => void }) {
+  const { theme, toggleTheme, accentColor, setAccentColor } = useTheme();
+  const { isPro, toggle } = useProMode();
+
+  return (
+    <div className="fixed inset-0 z-50 flex">
+      {/* backdrop */}
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative ml-64 w-72 bg-card border-r border-border h-full overflow-y-auto p-5 space-y-6 shadow-2xl">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Customise</span>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Theme */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Appearance</p>
+          <button
+            onClick={toggleTheme}
+            className="w-full flex items-center justify-between px-3 py-2.5 border border-border hover:border-primary/60 bg-background hover:bg-primary/5 transition-colors text-sm"
+          >
+            <div className="flex items-center gap-2">
+              {theme === "dark" ? <Moon className="h-4 w-4 text-primary" /> : <Sun className="h-4 w-4 text-amber-500" />}
+              <span>{theme === "dark" ? "Dark mode" : "Light mode"}</span>
+            </div>
+            <span className="text-xs text-muted-foreground">Toggle</span>
+          </button>
+        </div>
+
+        {/* Accent colour */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Accent Colour</p>
+          <div className="grid grid-cols-3 gap-2">
+            {ACCENT_COLORS.map((c) => (
+              <button
+                key={c.name}
+                onClick={() => setAccentColor(c)}
+                className={`flex flex-col items-center gap-1.5 px-2 py-2 border transition-colors text-xs ${
+                  accentColor.name === c.name
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:border-border/80 text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <span
+                  className="w-5 h-5 rounded-full block"
+                  style={{ background: `hsl(${c.hsl})` }}
+                />
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Pro mode */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Label Style</p>
+          <button
+            onClick={toggle}
+            className={`w-full flex items-center justify-between px-3 py-2.5 border transition-colors ${
+              isPro
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:border-border/80"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Zap className={`h-4 w-4 ${isPro ? "text-primary" : ""}`} />
+              <span className="text-xs font-semibold uppercase tracking-widest">
+                {isPro ? "Pro Mode" : "Simple Mode"}
+              </span>
+            </div>
+            <div className={`relative w-9 h-5 rounded-full transition-colors ${isPro ? "bg-primary" : "bg-muted"}`}>
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${isPro ? "left-4" : "left-0.5"}`} />
+            </div>
+          </button>
+          <p className="text-[10px] text-muted-foreground mt-2">
+            {isPro ? "Advanced terminology & metrics" : "Plain-English labels for every metric"}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { activeTicker, setActiveTicker } = useTicker();
-  const { isPro, toggle } = useProMode();
+  const { theme, toggleTheme } = useTheme();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full overflow-hidden bg-background text-foreground dark">
+      <div className={`flex h-screen w-full overflow-hidden bg-background text-foreground ${theme === "dark" ? "dark" : "light-mode"}`}>
         <Sidebar className="border-r border-border bg-card w-64 flex-shrink-0">
           <SidebarHeader className="p-4 border-b border-border">
             <div className="flex items-center gap-2 mb-4">
@@ -73,41 +160,53 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+
+              {/* Divider */}
+              <div className="my-2 border-t border-border/50" />
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={location === "/ai"}>
+                  <Link href="/ai" className="flex items-center gap-3">
+                    <Bot className="h-4 w-4" />
+                    <span className="flex items-center gap-2">
+                      AI Research
+                      <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 bg-primary/20 text-primary border border-primary/30 leading-none">
+                        BETA
+                      </span>
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter className="p-4 border-t border-border">
+          <SidebarFooter className="p-4 border-t border-border flex flex-row gap-2">
             <button
-              onClick={toggle}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-none border transition-colors ${
-                isPro
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:border-border/80"
-              }`}
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className="flex items-center justify-center w-9 h-9 border border-border hover:border-primary/60 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-colors"
             >
-              <div className="flex items-center gap-2">
-                <Zap className={`h-4 w-4 ${isPro ? "text-primary" : ""}`} />
-                <span className="text-xs font-semibold uppercase tracking-widest">
-                  {isPro ? "Pro Mode" : "Simple Mode"}
-                </span>
-              </div>
-              <div className={`relative w-9 h-5 rounded-full transition-colors ${isPro ? "bg-primary" : "bg-muted"}`}>
-                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${isPro ? "left-4" : "left-0.5"}`} />
-              </div>
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
-            <p className="text-[10px] text-muted-foreground mt-2 text-center">
-              {isPro ? "Advanced terminology & metrics" : "Plain-English labels"}
-            </p>
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="flex-1 flex items-center justify-center gap-2 h-9 border border-border hover:border-primary/60 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-colors text-xs font-semibold uppercase tracking-widest"
+            >
+              <Settings2 className="h-4 w-4" />
+              Customise
+            </button>
           </SidebarFooter>
         </Sidebar>
 
         <main className="flex-1 flex flex-col overflow-hidden relative">
-          <div className="absolute inset-0 pointer-events-none opacity-5" style={{ backgroundImage: 'linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+          <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
           <div className="flex-1 overflow-auto p-6 relative z-10">
             {children}
           </div>
         </main>
       </div>
+
+      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     </SidebarProvider>
   );
 }

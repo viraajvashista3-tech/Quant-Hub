@@ -55,7 +55,7 @@ export const GetStockHistoryParams = zod.object({
 export const getStockHistoryQueryPeriodDefault = `1y`;
 
 export const GetStockHistoryQueryParams = zod.object({
-  "period": zod.enum(['6mo', '1y', '2y', '5y']).default(getStockHistoryQueryPeriodDefault)
+  "period": zod.enum(['ytd', '6mo', '1y', '2y', '5y']).default(getStockHistoryQueryPeriodDefault)
 })
 
 export const GetStockHistoryResponse = zod.object({
