@@ -44,6 +44,18 @@ export interface StockOverview {
   beta: number | null;
   /** @nullable */
   annualizedVolatility?: number | null;
+  /** @nullable */
+  sharpeRatio?: number | null;
+  /** @nullable */
+  maxDrawdown?: number | null;
+  /** @nullable */
+  trendScore?: number | null;
+  /** @nullable */
+  momentumScore?: number | null;
+  /** @nullable */
+  sentimentContrib?: number | null;
+  /** @nullable */
+  volScore?: number | null;
 }
 
 export interface PriceBar {
@@ -63,6 +75,12 @@ export interface PriceBar {
   macdSignal?: number | null;
   /** @nullable */
   rsi?: number | null;
+  /** @nullable */
+  bbUpper?: number | null;
+  /** @nullable */
+  bbLower?: number | null;
+  /** @nullable */
+  bbMa20?: number | null;
 }
 
 export interface StockHistory {
@@ -102,6 +120,10 @@ export interface Fundamentals {
   /** @nullable */
   eps?: number | null;
   /** @nullable */
+  bookValuePerShare?: number | null;
+  /** @nullable */
+  grahamNumber?: number | null;
+  /** @nullable */
   sector?: string | null;
   /** @nullable */
   industry?: string | null;
@@ -125,6 +147,16 @@ export interface Fundamentals {
   currentRatio?: number | null;
   /** @nullable */
   quickRatio?: number | null;
+  /** @nullable */
+  totalRevenue?: number | null;
+  /** @nullable */
+  freeCashflow?: number | null;
+  /** @nullable */
+  totalDebt?: number | null;
+  /** @nullable */
+  totalCash?: number | null;
+  /** @nullable */
+  sharesOutstanding?: number | null;
 }
 
 export interface NewsItem {
@@ -182,6 +214,20 @@ export interface PeersData {
   correlationMatrix?: PeersDataCorrelationMatrix;
 }
 
+export interface RecommendationTrendPoint {
+  period: string;
+  /** @nullable */
+  strongBuy?: number | null;
+  /** @nullable */
+  buy?: number | null;
+  /** @nullable */
+  hold?: number | null;
+  /** @nullable */
+  sell?: number | null;
+  /** @nullable */
+  strongSell?: number | null;
+}
+
 export interface AnalystAction {
   firm: string;
   /** @nullable */
@@ -213,6 +259,49 @@ export interface AnalystData {
   /** @nullable */
   targetHigh?: number | null;
   recentActions?: AnalystAction[];
+  recommendationTrend?: RecommendationTrendPoint[];
+}
+
+export interface InsiderTransaction {
+  insider: string;
+  /** @nullable */
+  position?: string | null;
+  transactionType: string;
+  /** @nullable */
+  shares?: number | null;
+  /** @nullable */
+  value?: number | null;
+  /** @nullable */
+  text?: string | null;
+  /** @nullable */
+  date?: string | null;
+  /** @nullable */
+  ownership?: string | null;
+}
+
+export interface InsiderPurchases6m {
+  /** @nullable */
+  purchaseShares?: number | null;
+  /** @nullable */
+  purchaseTrans?: number | null;
+  /** @nullable */
+  saleShares?: number | null;
+  /** @nullable */
+  saleTrans?: number | null;
+}
+
+export interface InsiderData {
+  ticker: string;
+  name: string;
+  /** @nullable */
+  insiderOwnership?: number | null;
+  /** @nullable */
+  institutionalOwnership?: number | null;
+  netSentiment: string;
+  buyCount: number;
+  sellCount: number;
+  purchases6m?: InsiderPurchases6m;
+  transactions: InsiderTransaction[];
 }
 
 export interface UniverseSector {

@@ -192,6 +192,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /stock/{ticker}/insider:
+    get:
+      operationId: getStockInsider
+      tags: [stock]
+      summary: Insider trading transactions and ownership
+      parameters:
+        - name: ticker
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Insider trading data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsiderData"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /universe:
     get:
       operationId: getUniverse
@@ -264,6 +289,18 @@ components:
           type: ["number", "null"]
         annualizedVolatility:
           type: ["number", "null"]
+        sharpeRatio:
+          type: ["number", "null"]
+        maxDrawdown:
+          type: ["number", "null"]
+        trendScore:
+          type: ["number", "null"]
+        momentumScore:
+          type: ["number", "null"]
+        sentimentContrib:
+          type: ["number", "null"]
+        volScore:
+          type: ["number", "null"]
 
     PriceBar:
       type: object
@@ -290,6 +327,12 @@ components:
         macdSignal:
           type: ["number", "null"]
         rsi:
+          type: ["number", "null"]
+        bbUpper:
+          type: ["number", "null"]
+        bbLower:
+          type: ["number", "null"]
+        bbMa20:
           type: ["number", "null"]
 
     StockHistory:
@@ -339,6 +382,10 @@ components:
           type: ["number", "null"]
         eps:
           type: ["number", "null"]
+        bookValuePerShare:
+          type: ["number", "null"]
+        grahamNumber:
+          type: ["number", "null"]
         sector:
           type: ["string", "null"]
         industry:
@@ -362,6 +409,16 @@ components:
         currentRatio:
           type: ["number", "null"]
         quickRatio:
+          type: ["number", "null"]
+        totalRevenue:
+          type: ["number", "null"]
+        freeCashflow:
+          type: ["number", "null"]
+        totalDebt:
+          type: ["number", "null"]
+        totalCash:
+          type: ["number", "null"]
+        sharesOutstanding:
           type: ["number", "null"]
 
     NewsItem:
@@ -447,6 +504,23 @@ components:
             additionalProperties:
               type: number
 
+    RecommendationTrendPoint:
+      type: object
+      required: [period]
+      properties:
+        period:
+          type: string
+        strongBuy:
+          type: ["number", "null"]
+        buy:
+          type: ["number", "null"]
+        hold:
+          type: ["number", "null"]
+        sell:
+          type: ["number", "null"]
+        strongSell:
+          type: ["number", "null"]
+
     AnalystAction:
       type: object
       required: [firm, action]
@@ -490,6 +564,68 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AnalystAction"
+        recommendationTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecommendationTrendPoint"
+
+    InsiderTransaction:
+      type: object
+      required: [insider, transactionType]
+      properties:
+        insider:
+          type: string
+        position:
+          type: ["string", "null"]
+        transactionType:
+          type: string
+        shares:
+          type: ["number", "null"]
+        value:
+          type: ["number", "null"]
+        text:
+          type: ["string", "null"]
+        date:
+          type: ["string", "null"]
+        ownership:
+          type: ["string", "null"]
+
+    InsiderPurchases6m:
+      type: object
+      properties:
+        purchaseShares:
+          type: ["number", "null"]
+        purchaseTrans:
+          type: ["number", "null"]
+        saleShares:
+          type: ["number", "null"]
+        saleTrans:
+          type: ["number", "null"]
+
+    InsiderData:
+      type: object
+      required: [ticker, name, netSentiment, buyCount, sellCount, transactions]
+      properties:
+        ticker:
+          type: string
+        name:
+          type: string
+        insiderOwnership:
+          type: ["number", "null"]
+        institutionalOwnership:
+          type: ["number", "null"]
+        netSentiment:
+          type: string
+        buyCount:
+          type: number
+        sellCount:
+          type: number
+        purchases6m:
+          $ref: "#/components/schemas/InsiderPurchases6m"
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/InsiderTransaction"
 
     UniverseSector:
       type: object

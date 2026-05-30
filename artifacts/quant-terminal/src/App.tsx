@@ -13,6 +13,7 @@ import Analyst from "@/pages/analyst";
 import Peers from "@/pages/peers";
 import Fundamentals from "@/pages/fundamentals";
 import AiChat from "@/pages/ai-chat";
+import Insider from "@/pages/insider";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -36,6 +37,7 @@ function Router() {
         <Route path="/peers" component={Peers} />
         <Route path="/fundamentals" component={Fundamentals} />
         <Route path="/ai" component={AiChat} />
+        <Route path="/insider" component={Insider} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

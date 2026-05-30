@@ -22,6 +22,7 @@ import type {
   GetStockHistoryParams,
   GetStockPeersParams,
   HealthStatus,
+  InsiderData,
   NewsData,
   PeersData,
   StockHistory,
@@ -592,6 +593,83 @@ export function useGetStockAnalyst<TData = Awaited<ReturnType<typeof getStockAna
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetStockAnalystQueryOptions(ticker,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetStockInsiderUrl = (ticker: string,) => {
+
+
+
+
+  return `/api/stock/${ticker}/insider`
+}
+
+/**
+ * @summary Insider trading transactions and ownership
+ */
+export const getStockInsider = async (ticker: string, options?: RequestInit): Promise<InsiderData> => {
+
+  return customFetch<InsiderData>(getGetStockInsiderUrl(ticker),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStockInsiderQueryKey = (ticker: string,) => {
+    return [
+    `/api/stock/${ticker}/insider`
+    ] as const;
+    }
+
+
+export const getGetStockInsiderQueryOptions = <TData = Awaited<ReturnType<typeof getStockInsider>>, TError = ErrorType<ErrorResponse>>(ticker: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStockInsider>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStockInsiderQueryKey(ticker);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStockInsider>>> = ({ signal }) => getStockInsider(ticker, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(ticker), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStockInsider>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStockInsiderQueryResult = NonNullable<Awaited<ReturnType<typeof getStockInsider>>>
+export type GetStockInsiderQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Insider trading transactions and ownership
+ */
+
+export function useGetStockInsider<TData = Awaited<ReturnType<typeof getStockInsider>>, TError = ErrorType<ErrorResponse>>(
+ ticker: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStockInsider>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStockInsiderQueryOptions(ticker,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

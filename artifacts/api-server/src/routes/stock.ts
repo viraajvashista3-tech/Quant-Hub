@@ -22,7 +22,7 @@ router.get("/stock/:ticker", async (req, res) => {
 router.get("/stock/:ticker/history", async (req, res) => {
   const { ticker } = req.params;
   const period = (req.query["period"] as string) || "1y";
-  const validPeriods = ["6mo", "1y", "2y", "5y"];
+  const validPeriods = ["ytd", "6mo", "1y", "2y", "5y"];
   if (!validPeriods.includes(period)) {
     res.status(400).json({ error: "Invalid period" });
     return;
@@ -82,6 +82,22 @@ router.get("/stock/:ticker/analyst", async (req, res) => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     req.log.warn({ ticker, err: msg }, "analyst failed");
+    res.status(404).json({ error: msg });
+  }
+});
+
+router.get("/stock/:ticker/insider", async (req, res) => {
+  const { ticker } = req.params;
+  if (!ticker || !/^[A-Za-z.]{1,10}$/.test(ticker)) {
+    res.status(400).json({ error: "Invalid ticker symbol" });
+    return;
+  }
+  try {
+    const data = await runPython(["insider", ticker.toUpperCase()]);
+    res.json(data);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    req.log.warn({ ticker, err: msg }, "insider failed");
     res.status(404).json({ error: msg });
   }
 });

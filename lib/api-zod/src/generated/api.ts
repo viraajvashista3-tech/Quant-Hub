@@ -41,7 +41,13 @@ export const GetStockOverviewResponse = zod.object({
   "macdSignal": zod.number(),
   "sector": zod.string().nullable(),
   "beta": zod.number().nullable(),
-  "annualizedVolatility": zod.number().nullish()
+  "annualizedVolatility": zod.number().nullish(),
+  "sharpeRatio": zod.number().nullish(),
+  "maxDrawdown": zod.number().nullish(),
+  "trendScore": zod.number().nullish(),
+  "momentumScore": zod.number().nullish(),
+  "sentimentContrib": zod.number().nullish(),
+  "volScore": zod.number().nullish()
 })
 
 
@@ -71,7 +77,10 @@ export const GetStockHistoryResponse = zod.object({
   "ma200": zod.number().nullish(),
   "macd": zod.number().nullish(),
   "macdSignal": zod.number().nullish(),
-  "rsi": zod.number().nullish()
+  "rsi": zod.number().nullish(),
+  "bbUpper": zod.number().nullish(),
+  "bbLower": zod.number().nullish(),
+  "bbMa20": zod.number().nullish()
 }))
 })
 
@@ -100,6 +109,8 @@ export const GetStockFundamentalsResponse = zod.object({
   "beta": zod.number().nullish(),
   "dividendYield": zod.number().nullish(),
   "eps": zod.number().nullish(),
+  "bookValuePerShare": zod.number().nullish(),
+  "grahamNumber": zod.number().nullish(),
   "sector": zod.string().nullish(),
   "industry": zod.string().nullish(),
   "description": zod.string().nullish(),
@@ -111,7 +122,12 @@ export const GetStockFundamentalsResponse = zod.object({
   "revenueGrowth": zod.number().nullish(),
   "earningsGrowth": zod.number().nullish(),
   "currentRatio": zod.number().nullish(),
-  "quickRatio": zod.number().nullish()
+  "quickRatio": zod.number().nullish(),
+  "totalRevenue": zod.number().nullish(),
+  "freeCashflow": zod.number().nullish(),
+  "totalDebt": zod.number().nullish(),
+  "totalCash": zod.number().nullish(),
+  "sharesOutstanding": zod.number().nullish()
 })
 
 
@@ -193,7 +209,49 @@ export const GetStockAnalystResponse = zod.object({
   "priceTargetAction": zod.string().nullish(),
   "currentPriceTarget": zod.number().nullish(),
   "priorPriceTarget": zod.number().nullish()
+})).optional(),
+  "recommendationTrend": zod.array(zod.object({
+  "period": zod.string(),
+  "strongBuy": zod.number().nullish(),
+  "buy": zod.number().nullish(),
+  "hold": zod.number().nullish(),
+  "sell": zod.number().nullish(),
+  "strongSell": zod.number().nullish()
 })).optional()
+})
+
+
+/**
+ * @summary Insider trading transactions and ownership
+ */
+export const GetStockInsiderParams = zod.object({
+  "ticker": zod.coerce.string()
+})
+
+export const GetStockInsiderResponse = zod.object({
+  "ticker": zod.string(),
+  "name": zod.string(),
+  "insiderOwnership": zod.number().nullish(),
+  "institutionalOwnership": zod.number().nullish(),
+  "netSentiment": zod.string(),
+  "buyCount": zod.number(),
+  "sellCount": zod.number(),
+  "purchases6m": zod.object({
+  "purchaseShares": zod.number().nullish(),
+  "purchaseTrans": zod.number().nullish(),
+  "saleShares": zod.number().nullish(),
+  "saleTrans": zod.number().nullish()
+}).optional(),
+  "transactions": zod.array(zod.object({
+  "insider": zod.string(),
+  "position": zod.string().nullish(),
+  "transactionType": zod.string(),
+  "shares": zod.number().nullish(),
+  "value": zod.number().nullish(),
+  "text": zod.string().nullish(),
+  "date": zod.string().nullish(),
+  "ownership": zod.string().nullish()
+}))
 })
 
 

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTicker } from "@/lib/ticker-context";
-import { useLabels } from "@/lib/pro-mode-context";
+import { useLabels, useProMode } from "@/lib/pro-mode-context";
 import {
   useGetStockOverview,
   useGetStockHistory,
@@ -16,11 +16,14 @@ import { formatCurrency, formatPercent, formatLargeNumber } from "@/lib/format";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, ReferenceLine } from "recharts";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { TrendingUp, TrendingDown, Minus, Zap } from "lucide-react";
 
 export default function Terminal() {
   const { activeTicker } = useTicker();
   const [period, setPeriod] = useState<'ytd'|'6mo'|'1y'|'2y'|'5y'>('1y');
+  const [showBB, setShowBB] = useState(false);
   const label = useLabels();
+  const { isPro } = useProMode();
 
   const { data: overview, isLoading: isLoadingOverview } = useGetStockOverview(activeTicker, {
     query: { enabled: !!activeTicker, queryKey: getGetStockOverviewQueryKey(activeTicker) }
@@ -34,11 +37,21 @@ export default function Terminal() {
     query: { enabled: !!activeTicker, queryKey: getGetStockNewsQueryKey(activeTicker) }
   });
 
+  const quantBreakdown = useMemo(() => {
+    if (!overview) return null;
+    return [
+      { label: "Trend (Price vs MA200)", value: overview.trendScore ?? 0, max: 20, color: (overview.trendScore ?? 0) >= 0 ? "#10b981" : "hsl(var(--destructive))" },
+      { label: "Momentum (RSI)", value: overview.momentumScore ?? 0, max: 20, color: (overview.momentumScore ?? 0) >= 0 ? "#10b981" : "hsl(var(--destructive))" },
+      { label: "News Sentiment", value: overview.sentimentContrib ?? 0, max: 40, color: (overview.sentimentContrib ?? 0) >= 0 ? "#10b981" : "hsl(var(--destructive))" },
+      { label: "Volume Activity", value: overview.volScore ?? 0, max: 10, color: "#f59e0b" },
+    ];
+  }, [overview]);
+
   if (!activeTicker) return <div className="p-8 text-center text-muted-foreground">Select a ticker to begin analysis.</div>;
 
   return (
     <div className="space-y-6">
-      {/* Header / Overview */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-primary flex items-center gap-4">
@@ -77,17 +90,29 @@ export default function Terminal() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Chart */}
         <Card className="lg:col-span-2 bg-card rounded-none border-border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Price History & MA</CardTitle>
-            <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)} className="h-8">
-              <TabsList className="h-8 rounded-none">
-                <TabsTrigger value="ytd" className="rounded-none text-xs">YTD</TabsTrigger>
-                <TabsTrigger value="6mo" className="rounded-none text-xs">6M</TabsTrigger>
-                <TabsTrigger value="1y" className="rounded-none text-xs">1Y</TabsTrigger>
-                <TabsTrigger value="2y" className="rounded-none text-xs">2Y</TabsTrigger>
-                <TabsTrigger value="5y" className="rounded-none text-xs">5Y</TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 flex-wrap gap-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
+              Price History & MA{isPro && showBB ? " + Bollinger Bands" : ""}
+            </CardTitle>
+            <div className="flex items-center gap-2 flex-wrap">
+              {isPro && (
+                <button
+                  onClick={() => setShowBB((v) => !v)}
+                  className={`text-xs px-2.5 py-1 border transition-colors uppercase tracking-widest ${showBB ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"}`}
+                >
+                  BB
+                </button>
+              )}
+              <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)} className="h-8">
+                <TabsList className="h-8 rounded-none">
+                  <TabsTrigger value="ytd" className="rounded-none text-xs">YTD</TabsTrigger>
+                  <TabsTrigger value="6mo" className="rounded-none text-xs">6M</TabsTrigger>
+                  <TabsTrigger value="1y" className="rounded-none text-xs">1Y</TabsTrigger>
+                  <TabsTrigger value="2y" className="rounded-none text-xs">2Y</TabsTrigger>
+                  <TabsTrigger value="5y" className="rounded-none text-xs">5Y</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="h-[350px] w-full">
@@ -101,6 +126,11 @@ export default function Terminal() {
                       contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 0 }}
                       itemStyle={{ fontFamily: 'var(--font-mono)' }}
                     />
+                    {isPro && showBB && <>
+                      <Line type="monotone" dataKey="bbUpper" stroke="#6366f1" strokeWidth={1} strokeDasharray="4 2" dot={false} isAnimationActive={false} name="BB Upper" />
+                      <Line type="monotone" dataKey="bbLower" stroke="#6366f1" strokeWidth={1} strokeDasharray="4 2" dot={false} isAnimationActive={false} name="BB Lower" />
+                      <Line type="monotone" dataKey="bbMa20" stroke="#6366f1" strokeWidth={1} strokeOpacity={0.4} dot={false} isAnimationActive={false} name="BB Mid" />
+                    </>}
                     <Line type="monotone" dataKey="close" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} isAnimationActive={false} name="Price" />
                     <Line type="monotone" dataKey="ma50" stroke="#f59e0b" strokeWidth={1} dot={false} isAnimationActive={false} name="MA50" />
                     <Line type="monotone" dataKey="ma200" stroke="#8b5cf6" strokeWidth={1} dot={false} isAnimationActive={false} name="MA200" />
@@ -124,10 +154,11 @@ export default function Terminal() {
                 </ResponsiveContainer>
               )}
             </div>
-            <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
+            <div className="flex gap-4 mt-3 text-xs text-muted-foreground flex-wrap">
               <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-0.5 bg-primary" /> Price</span>
               <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-0.5 bg-amber-500" /> MA50</span>
               <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-0.5 bg-violet-500" /> MA200</span>
+              {isPro && showBB && <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-0.5 bg-indigo-400" style={{ borderTop: '1px dashed' }} /> Bollinger Bands</span>}
             </div>
           </CardContent>
         </Card>
@@ -173,14 +204,113 @@ export default function Terminal() {
                     <span className="text-xs text-muted-foreground uppercase">{label("beta")}</span>
                     <span className="font-mono text-sm">{overview.beta?.toFixed(2) || "-"}</span>
                   </div>
-                  <div className="flex justify-between items-center py-2">
+                  <div className="flex justify-between items-center py-2 border-b border-border">
                     <span className="text-xs text-muted-foreground uppercase">{label("annVol")}</span>
                     <span className="font-mono text-sm">{overview.annualizedVolatility ? overview.annualizedVolatility.toFixed(1) + "%" : "-"}</span>
                   </div>
+                  {isPro && overview.sharpeRatio != null && (
+                    <div className="flex justify-between items-center py-2 border-b border-border">
+                      <span className="text-xs text-muted-foreground uppercase flex items-center gap-1"><Zap className="h-3 w-3 text-primary" />Sharpe Ratio</span>
+                      <span className={`font-mono text-sm ${overview.sharpeRatio > 1 ? 'text-green-500' : overview.sharpeRatio < 0 ? 'text-destructive' : 'text-foreground'}`}>
+                        {overview.sharpeRatio.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {isPro && overview.maxDrawdown != null && (
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-xs text-muted-foreground uppercase flex items-center gap-1"><Zap className="h-3 w-3 text-primary" />Max Drawdown</span>
+                      <span className="font-mono text-sm text-destructive">{overview.maxDrawdown.toFixed(1)}%</span>
+                    </div>
+                  )}
                 </>
               )}
             </CardContent>
           </Card>
+
+          {/* Pro Mode: Quant Score Breakdown */}
+          {isPro && overview && quantBreakdown && (
+            <Card className="bg-card rounded-none border-primary/30">
+              <CardHeader className="pb-2 bg-primary/5">
+                <CardTitle className="text-sm font-medium text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Zap className="h-4 w-4" /> Quant Score Breakdown
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-3">
+                {quantBreakdown.map((item) => (
+                  <div key={item.label}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-muted-foreground">{item.label}</span>
+                      <span className="font-mono" style={{ color: item.color }}>
+                        {item.value >= 0 ? "+" : ""}{item.value.toFixed(1)}
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-none overflow-hidden">
+                      <div
+                        className="h-full transition-all"
+                        style={{
+                          width: `${Math.min(100, (Math.abs(item.value) / Math.abs(item.max)) * 100)}%`,
+                          backgroundColor: item.color,
+                          marginLeft: item.value < 0 ? "auto" : undefined,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <div className="pt-2 border-t border-border flex justify-between text-xs">
+                  <span className="text-muted-foreground uppercase tracking-widest">Total Score</span>
+                  <span className={`font-mono font-bold ${overview.quantScore > 15 ? 'text-green-500' : overview.quantScore < -10 ? 'text-destructive' : 'text-foreground'}`}>
+                    {overview.quantScore >= 0 ? "+" : ""}{overview.quantScore.toFixed(1)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground pt-1">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-green-500 inline-block" /> &gt;15 = BUY</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-foreground/30 inline-block" /> -10–15 = HOLD</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-destructive inline-block" /> &lt;-10 = AVOID</span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* MA Cross Signal */}
+          {overview && (
+            <Card className="bg-card rounded-none border-border">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">MA Position</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {isLoadingOverview ? <Skeleton className="h-16 w-full" /> : overview && (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Price vs MA50</span>
+                      {overview.ma50 ? (
+                        <span className={`text-xs font-mono flex items-center gap-1 ${overview.price > overview.ma50 ? 'text-green-500' : 'text-destructive'}`}>
+                          {overview.price > overview.ma50 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                          {((overview.price - overview.ma50) / overview.ma50 * 100).toFixed(1)}%
+                        </span>
+                      ) : <Minus className="h-3 w-3 text-muted-foreground" />}
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Price vs MA200</span>
+                      {overview.ma200 ? (
+                        <span className={`text-xs font-mono flex items-center gap-1 ${overview.price > overview.ma200 ? 'text-green-500' : 'text-destructive'}`}>
+                          {overview.price > overview.ma200 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                          {((overview.price - overview.ma200) / overview.ma200 * 100).toFixed(1)}%
+                        </span>
+                      ) : <Minus className="h-3 w-3 text-muted-foreground" />}
+                    </div>
+                    {overview.ma50 && overview.ma200 && (
+                      <div className="flex justify-between items-center pt-1 border-t border-border">
+                        <span className="text-xs text-muted-foreground">MA Cross</span>
+                        <span className={`text-xs font-semibold ${overview.ma50 > overview.ma200 ? 'text-green-500' : 'text-destructive'}`}>
+                          {overview.ma50 > overview.ma200 ? "Golden Cross ▲" : "Death Cross ▼"}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* News Sentiment */}
           <Card className="bg-card rounded-none border-border overflow-hidden">

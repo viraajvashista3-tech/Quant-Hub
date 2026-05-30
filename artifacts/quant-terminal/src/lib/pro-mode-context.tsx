@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 interface ProModeContextValue {
   isPro: boolean;
@@ -8,7 +8,14 @@ interface ProModeContextValue {
 const ProModeContext = createContext<ProModeContextValue>({ isPro: false, toggle: () => {} });
 
 export function ProModeProvider({ children }: { children: ReactNode }) {
-  const [isPro, setIsPro] = useState(false);
+  const [isPro, setIsPro] = useState(() => {
+    try { return localStorage.getItem("proMode") === "true"; } catch { return false; }
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem("proMode", String(isPro)); } catch {}
+  }, [isPro]);
+
   return (
     <ProModeContext.Provider value={{ isPro, toggle: () => setIsPro((p) => !p) }}>
       {children}
@@ -20,41 +27,14 @@ export function useProMode() {
   return useContext(ProModeContext);
 }
 
-// Label maps — simple uses plain English, pro uses technical shorthand
 type LabelKey =
-  | "quantScore"
-  | "signal"
-  | "rsi"
-  | "macd"
-  | "beta"
-  | "annVol"
-  | "volume"
-  | "avgVolume"
-  | "pe"
-  | "forwardPe"
-  | "peg"
-  | "pb"
-  | "evEbitda"
-  | "debtEquity"
-  | "roe"
-  | "roa"
-  | "profitMargin"
-  | "opMargin"
-  | "revGrowth"
-  | "epsGrowth"
-  | "currentRatio"
-  | "quickRatio"
-  | "shortRatio"
-  | "shortFloat"
-  | "institutionalOwn"
-  | "dividendYield"
-  | "eps"
-  | "marketCap"
-  | "consensusRating"
-  | "priceTargets"
-  | "recentActions"
-  | "correlationMatrix"
-  | "fundamentalsComparison";
+  | "quantScore" | "signal" | "rsi" | "macd" | "beta" | "annVol"
+  | "volume" | "avgVolume" | "pe" | "forwardPe" | "peg" | "pb"
+  | "evEbitda" | "debtEquity" | "roe" | "roa" | "profitMargin"
+  | "opMargin" | "revGrowth" | "epsGrowth" | "currentRatio"
+  | "quickRatio" | "shortRatio" | "shortFloat" | "institutionalOwn"
+  | "dividendYield" | "eps" | "marketCap" | "consensusRating"
+  | "priceTargets" | "recentActions" | "correlationMatrix" | "fundamentalsComparison";
 
 const SIMPLE: Record<LabelKey, string> = {
   quantScore: "Signal Score",

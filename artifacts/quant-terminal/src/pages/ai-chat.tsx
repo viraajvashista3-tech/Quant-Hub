@@ -1,11 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTicker } from "@/lib/ticker-context";
-import { useGetStockOverview, useGetStockFundamentals, getGetStockOverviewQueryKey, getGetStockFundamentalsQueryKey } from "@workspace/api-client-react";
+import {
+  useGetStockOverview, useGetStockFundamentals, useGetStockAnalyst, useGetStockNews,
+  getGetStockOverviewQueryKey, getGetStockFundamentalsQueryKey, getGetStockAnalystQueryKey, getGetStockNewsQueryKey
+} from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Send, Bot, User, AlertTriangle, Loader2, RotateCcw, ChevronDown } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
   role: "user" | "assistant";
@@ -14,12 +19,12 @@ interface Message {
 }
 
 const SUGGESTED_QUESTIONS = [
-  "What are the key risks facing this company right now?",
-  "How does the valuation compare to historical norms?",
-  "What does the technical picture suggest about near-term momentum?",
-  "Walk me through the bull case and bear case for this stock.",
+  "Give me a complete bull case, bear case and base case for this stock.",
+  "How does the valuation compare to historical norms and sector peers?",
+  "What does the technical picture (RSI, MACD, MAs) say about near-term momentum?",
+  "Break down the key risks — macro, competitive, regulatory and execution.",
   "What should I watch in the next earnings report?",
-  "How sensitive is this stock to interest rate changes?",
+  "Is the current quant signal reliable, or are there conflicting indicators?",
 ];
 
 export default function AiChat() {
@@ -37,6 +42,12 @@ export default function AiChat() {
   const { data: fundamentals } = useGetStockFundamentals(activeTicker, {
     query: { enabled: !!activeTicker, queryKey: getGetStockFundamentalsQueryKey(activeTicker) },
   });
+  const { data: analyst } = useGetStockAnalyst(activeTicker, {
+    query: { enabled: !!activeTicker, queryKey: getGetStockAnalystQueryKey(activeTicker) },
+  });
+  const { data: news } = useGetStockNews(activeTicker, {
+    query: { enabled: !!activeTicker, queryKey: getGetStockNewsQueryKey(activeTicker) },
+  });
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -46,31 +57,53 @@ export default function AiChat() {
     if (!overview && !fundamentals) return undefined;
     return {
       ticker: activeTicker,
+      companyName: overview?.name,
+      sector: overview?.sector,
       price: overview?.price,
       changePercent: overview?.changePercent,
       quantScore: overview?.quantScore,
       signal: overview?.signal,
       rsi: overview?.rsi,
       macd: overview?.macd,
+      macdSignal: overview?.macdSignal,
       beta: overview?.beta,
       annualizedVolatility: overview?.annualizedVolatility,
+      sharpeRatio: overview?.sharpeRatio,
+      maxDrawdown: overview?.maxDrawdown,
       sentimentScore: overview?.sentimentScore,
+      ma50: overview?.ma50,
+      ma200: overview?.ma200,
+      volume: overview?.volume,
+      avgVolume: overview?.avgVolume,
       marketCap: fundamentals?.marketCap,
       pe: fundamentals?.pe,
       forwardPe: fundamentals?.forwardPe,
       peg: fundamentals?.peg,
       evToEbitda: fundamentals?.evToEbitda,
+      priceToBook: fundamentals?.priceToBook,
       debtToEquity: fundamentals?.debtToEquity,
       returnOnEquity: fundamentals?.returnOnEquity,
+      returnOnAssets: fundamentals?.returnOnAssets,
       profitMargins: fundamentals?.profitMargins,
+      operatingMargins: fundamentals?.operatingMargins,
       revenueGrowth: fundamentals?.revenueGrowth,
       earningsGrowth: fundamentals?.earningsGrowth,
+      freeCashflow: fundamentals?.freeCashflow,
+      currentRatio: fundamentals?.currentRatio,
       fiftyTwoWeekHigh: fundamentals?.fiftyTwoWeekHigh,
       fiftyTwoWeekLow: fundamentals?.fiftyTwoWeekLow,
-      sector: overview?.sector,
-      name: overview?.name,
+      shortPercentOfFloat: fundamentals?.shortPercentOfFloat,
+      institutionalOwnership: fundamentals?.institutionalOwnership,
+      grahamNumber: fundamentals?.grahamNumber,
+      analystConsensus: analyst?.consensusRating,
+      analystCount: analyst?.numAnalysts,
+      targetLow: analyst?.targetLow,
+      targetMean: analyst?.targetMean,
+      targetHigh: analyst?.targetHigh,
+      newsSentimentLabel: news?.sentimentLabel,
+      topHeadlines: news?.headlines?.slice(0, 3).map(h => h.title),
     };
-  }, [activeTicker, overview, fundamentals]);
+  }, [activeTicker, overview, fundamentals, analyst, news]);
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isStreaming) return;
@@ -168,10 +201,7 @@ export default function AiChat() {
     }
   };
 
-  const stopStream = () => {
-    abortRef.current?.abort();
-  };
-
+  const stopStream = () => { abortRef.current?.abort(); };
   const clearChat = () => {
     if (isStreaming) abortRef.current?.abort();
     setMessages([]);
@@ -189,7 +219,7 @@ export default function AiChat() {
             {activeTicker && <span className="text-foreground font-normal text-xl">— {activeTicker}</span>}
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            Powered by GPT-5 · Context-aware analysis using live market data
+            Powered by GPT-4 · Context-aware analysis using live market data
           </p>
         </div>
         {messages.length > 0 && (
@@ -205,7 +235,7 @@ export default function AiChat() {
         <CardContent className="p-3 flex gap-2 items-start">
           <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
           <p className="text-xs text-amber-200/80 leading-relaxed">
-            <span className="font-semibold text-amber-400">Disclaimer:</span> This AI provides research assistance only and may be inaccurate. It is not financial advice and does not constitute a recommendation to buy or sell any security. Always do your own research and consult a qualified advisor before making investment decisions.
+            <span className="font-semibold text-amber-400">Disclaimer:</span> AI responses are research assistance only and may contain errors. Not financial advice. Always do your own research and consult a qualified advisor before making investment decisions.
           </p>
         </CardContent>
       </Card>
@@ -231,8 +261,11 @@ export default function AiChat() {
                     <div><span className="text-muted-foreground">Quant Score</span><div className="font-mono font-bold">{overview.quantScore?.toFixed(1)}</div></div>
                     <div><span className="text-muted-foreground">RSI</span><div className="font-mono font-bold">{overview.rsi?.toFixed(1)}</div></div>
                     {fundamentals?.pe && <div><span className="text-muted-foreground">P/E</span><div className="font-mono font-bold">{fundamentals.pe.toFixed(1)}x</div></div>}
-                    {fundamentals?.profitMargins && <div><span className="text-muted-foreground">Net Margin</span><div className="font-mono font-bold">{(fundamentals.profitMargins * 100).toFixed(1)}%</div></div>}
+                    {analyst?.targetMean && <div><span className="text-muted-foreground">Target</span><div className="font-mono font-bold">${analyst.targetMean.toFixed(2)}</div></div>}
                     {overview.beta && <div><span className="text-muted-foreground">Beta</span><div className="font-mono font-bold">{overview.beta.toFixed(2)}</div></div>}
+                    {overview.sharpeRatio != null && <div><span className="text-muted-foreground">Sharpe</span><div className="font-mono font-bold">{overview.sharpeRatio.toFixed(2)}</div></div>}
+                    {analyst?.consensusRating && <div><span className="text-muted-foreground">Analyst</span><div className="font-mono font-bold">{analyst.consensusRating}</div></div>}
+                    {news?.sentimentLabel && <div><span className="text-muted-foreground">News</span><div className="font-mono font-bold">{news.sentimentLabel}</div></div>}
                   </div>
                 </CardContent>
               </Card>
@@ -263,14 +296,31 @@ export default function AiChat() {
                   <Bot className="h-3.5 w-3.5 text-primary" />
                 </div>
               )}
-              <div className={`max-w-[80%] rounded-none px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+              <div className={`max-w-[85%] rounded-none px-4 py-3 text-sm ${
                 msg.role === "user"
                   ? "bg-primary/15 border border-primary/30 text-foreground"
                   : "bg-card border border-border text-foreground"
               }`}>
-                {msg.content}
-                {msg.streaming && (
-                  <span className="inline-block ml-1 w-1.5 h-4 bg-primary/70 animate-pulse align-text-bottom" />
+                {msg.role === "assistant" ? (
+                  <div className="prose prose-sm prose-invert max-w-none
+                    [&_h2]:text-primary [&_h2]:text-sm [&_h2]:font-bold [&_h2]:uppercase [&_h2]:tracking-wider [&_h2]:mt-4 [&_h2]:mb-2 [&_h2:first-child]:mt-0
+                    [&_h3]:text-foreground [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:uppercase [&_h3]:tracking-wider [&_h3]:mt-3 [&_h3]:mb-1.5
+                    [&_p]:leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0
+                    [&_ul]:mb-2 [&_ul]:pl-4 [&_li]:mb-1 [&_li]:leading-relaxed
+                    [&_ol]:mb-2 [&_ol]:pl-4
+                    [&_strong]:text-foreground [&_strong]:font-semibold
+                    [&_blockquote]:border-l-2 [&_blockquote]:border-amber-500/60 [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_blockquote]:italic [&_blockquote]:my-2
+                    [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono
+                    [&_hr]:border-border [&_hr]:my-3">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {msg.content}
+                    </ReactMarkdown>
+                    {msg.streaming && (
+                      <span className="inline-block ml-1 w-1.5 h-4 bg-primary/70 animate-pulse align-text-bottom" />
+                    )}
+                  </div>
+                ) : (
+                  <span className="leading-relaxed">{msg.content}</span>
                 )}
               </div>
               {msg.role === "user" && (

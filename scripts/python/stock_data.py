@@ -42,6 +42,15 @@ def safe_float(val, default=None):
         return default
 
 
+def safe_int(val, default=None):
+    if val is None:
+        return default
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return default
+
+
 def flatten_df(df):
     """Flatten multi-level columns from yfinance (e.g. ('Close','AAPL') → 'Close')."""
     if isinstance(df.columns, pd.MultiIndex):
@@ -73,6 +82,12 @@ def calculate_indicators(df):
     gain = delta.clip(lower=0).ewm(alpha=1 / 14, adjust=False).mean()
     loss = (-delta.clip(upper=0)).ewm(alpha=1 / 14, adjust=False).mean()
     out["RSI"] = 100 - (100 / (1 + (gain / (loss + 1e-10))))
+
+    # Bollinger Bands (20-day, 2σ)
+    out["BB_MA20"] = close.rolling(20).mean()
+    out["BB_STD20"] = close.rolling(20).std()
+    out["BB_Upper"] = out["BB_MA20"] + 2 * out["BB_STD20"]
+    out["BB_Lower"] = out["BB_MA20"] - 2 * out["BB_STD20"]
 
     return out
 
@@ -151,6 +166,17 @@ def cmd_overview(ticker):
     daily_rets = close.pct_change().dropna()
     ann_vol = float(daily_rets.std() * np.sqrt(252) * 100)
 
+    # Sharpe ratio (risk-free rate ~4.5%)
+    rf_daily = 0.045 / 252
+    excess = daily_rets - rf_daily
+    sharpe = float(excess.mean() / excess.std() * np.sqrt(252)) if excess.std() != 0 else 0.0
+
+    # Max drawdown
+    cumulative = (1 + daily_rets).cumprod()
+    rolling_max = cumulative.cummax()
+    drawdown = (cumulative - rolling_max) / rolling_max
+    max_drawdown = float(drawdown.min() * 100)
+
     sent_score, _ = fetch_sentiment(ticker)
 
     trend_score = 20.0 if (ma200 and latest_close > ma200) else -20.0
@@ -179,6 +205,12 @@ def cmd_overview(ticker):
         "sector": info.get("sector"),
         "beta": safe_float(info.get("beta")),
         "annualizedVolatility": round(ann_vol, 2),
+        "sharpeRatio": round(sharpe, 3),
+        "maxDrawdown": round(max_drawdown, 2),
+        "trendScore": round(trend_score, 2),
+        "momentumScore": round(momentum_score, 2),
+        "sentimentContrib": round(sent_score * 40, 2),
+        "volScore": round(vol_score, 2),
     }
     print(json.dumps(result))
 
@@ -214,6 +246,9 @@ def cmd_history(ticker, period="1y"):
             "macd": sv("MACD"),
             "macdSignal": sv("Signal"),
             "rsi": sv("RSI"),
+            "bbUpper": sv("BB_Upper"),
+            "bbLower": sv("BB_Lower"),
+            "bbMa20": sv("BB_MA20"),
         })
 
     print(json.dumps({"ticker": ticker.upper(), "bars": bars}))
@@ -226,6 +261,12 @@ def cmd_fundamentals(ticker):
     if not info:
         print(json.dumps({"error": f"No data for {ticker}"}))
         return
+
+    eps = safe_float(info.get("trailingEps"))
+    bvps = safe_float(info.get("bookValue"))
+    graham_number = None
+    if eps and bvps and eps > 0 and bvps > 0:
+        graham_number = round(float(np.sqrt(22.5 * eps * bvps)), 2)
 
     result = {
         "ticker": ticker.upper(),
@@ -243,7 +284,9 @@ def cmd_fundamentals(ticker):
         "profitMargins": safe_float(info.get("profitMargins")),
         "beta": safe_float(info.get("beta")),
         "dividendYield": safe_float(info.get("dividendYield")),
-        "eps": safe_float(info.get("trailingEps")),
+        "eps": eps,
+        "bookValuePerShare": bvps,
+        "grahamNumber": graham_number,
         "sector": info.get("sector"),
         "industry": info.get("industry"),
         "description": info.get("longBusinessSummary"),
@@ -256,6 +299,11 @@ def cmd_fundamentals(ticker):
         "earningsGrowth": safe_float(info.get("earningsGrowth")),
         "currentRatio": safe_float(info.get("currentRatio")),
         "quickRatio": safe_float(info.get("quickRatio")),
+        "totalRevenue": safe_float(info.get("totalRevenue")),
+        "freeCashflow": safe_float(info.get("freeCashflow")),
+        "totalDebt": safe_float(info.get("totalDebt")),
+        "totalCash": safe_float(info.get("totalCash")),
+        "sharesOutstanding": safe_float(info.get("sharesOutstanding")),
     }
     print(json.dumps(result))
 
@@ -297,7 +345,6 @@ def generate_peers_summary(ticker, peer_data, sector):
 
         parts = []
 
-        # Valuation
         if pe is not None and med_pe is not None:
             diff_pct = ((pe - med_pe) / med_pe) * 100 if med_pe else 0
             if abs(diff_pct) > 10:
@@ -309,7 +356,6 @@ def generate_peers_summary(ticker, peer_data, sector):
             else:
                 parts.append(f"{name} trades in line with {sector} peers on valuation (P/E {pe:.1f}x)")
 
-        # Profitability
         if margins is not None and med_margins is not None:
             if margins > med_margins * 1.1:
                 parts.append(
@@ -323,7 +369,6 @@ def generate_peers_summary(ticker, peer_data, sector):
             else:
                 parts.append(f"profit margins are in line with the sector at {margins*100:.1f}%")
 
-        # Risk / Beta
         if beta is not None and med_beta is not None:
             if beta > med_beta * 1.15:
                 parts.append(
@@ -334,7 +379,6 @@ def generate_peers_summary(ticker, peer_data, sector):
                     f"it is less volatile than its peers (beta {beta:.2f} vs sector {med_beta:.2f})"
                 )
 
-        # Capital efficiency
         if roe is not None and med_roe is not None:
             if roe > med_roe * 1.1:
                 parts.append(
@@ -345,7 +389,6 @@ def generate_peers_summary(ticker, peer_data, sector):
                     f"though return on equity lags peers ({roe*100:.1f}% vs {med_roe*100:.1f}%)"
                 )
 
-        # Debt
         if de is not None and med_de is not None:
             if de > med_de * 1.3:
                 parts.append(
@@ -378,7 +421,6 @@ def cmd_peers(ticker, period="1y"):
     period_map = {"1y": "1y", "5y": "5y"}
     yf_period = period_map.get(period, "1y")
 
-    # Correlation via price data
     corr_dict = {}
     try:
         raw = yf.download(compare_list, period=yf_period, progress=False, auto_adjust=True)
@@ -398,7 +440,6 @@ def cmd_peers(ticker, period="1y"):
     except Exception:
         pass
 
-    # Peer fundamentals
     peer_data = []
     for t in compare_list[:7]:
         try:
@@ -444,7 +485,7 @@ def cmd_analyst(ticker):
         upgrades = tk.upgrades_downgrades
         if upgrades is not None and not upgrades.empty:
             upgrades = upgrades.reset_index()
-            for _, row in upgrades.head(20).iterrows():
+            for _, row in upgrades.head(40).iterrows():
                 date_val = None
                 if "GradeDate" in row and row["GradeDate"] is not None:
                     try:
@@ -469,6 +510,29 @@ def cmd_analyst(ticker):
     except Exception:
         pass
 
+    # Recommendation trend (last 4 months)
+    rec_trend = []
+    try:
+        rs = tk.recommendations_summary
+        if rs is not None and not rs.empty:
+            for _, row in rs.iterrows():
+                period_label = str(row.get("period", ""))
+                if period_label.startswith("-"):
+                    months_ago = int(period_label.replace("m", ""))
+                    label = f"{abs(months_ago)}mo ago" if months_ago != 0 else "Current"
+                else:
+                    label = period_label
+                rec_trend.append({
+                    "period": label,
+                    "strongBuy": safe_int(row.get("strongBuy"), 0),
+                    "buy": safe_int(row.get("buy"), 0),
+                    "hold": safe_int(row.get("hold"), 0),
+                    "sell": safe_int(row.get("sell"), 0),
+                    "strongSell": safe_int(row.get("strongSell"), 0),
+                })
+    except Exception:
+        pass
+
     result = {
         "ticker": ticker.upper(),
         "consensusRating": rec_key or "N/A",
@@ -478,6 +542,95 @@ def cmd_analyst(ticker):
         "targetMean": safe_float(info.get("targetMeanPrice")),
         "targetHigh": safe_float(info.get("targetHighPrice")),
         "recentActions": recent_actions,
+        "recommendationTrend": rec_trend,
+    }
+    print(json.dumps(result))
+
+
+def cmd_insider(ticker):
+    tk = yf.Ticker(ticker)
+    info = tk.info
+
+    transactions = []
+    try:
+        it = tk.insider_transactions
+        if it is not None and not it.empty:
+            it = it.reset_index() if "Start Date" not in it.columns else it
+            for _, row in it.head(50).iterrows():
+                text = str(row.get("Text", ""))
+                transaction_type = "Unknown"
+                text_lower = text.lower()
+                if "sale" in text_lower or "sell" in text_lower:
+                    transaction_type = "Sale"
+                elif "purchase" in text_lower or "buy" in text_lower or "bought" in text_lower:
+                    transaction_type = "Purchase"
+                elif "gift" in text_lower or "donated" in text_lower:
+                    transaction_type = "Gift"
+                elif "option" in text_lower or "exercise" in text_lower:
+                    transaction_type = "Option Exercise"
+                elif "award" in text_lower or "grant" in text_lower:
+                    transaction_type = "Award/Grant"
+
+                date_val = None
+                try:
+                    sd = row.get("Start Date")
+                    if sd is not None:
+                        date_val = str(pd.Timestamp(sd).date())
+                except Exception:
+                    pass
+
+                shares = safe_int(row.get("Shares"))
+                value = safe_float(row.get("Value"))
+
+                transactions.append({
+                    "insider": str(row.get("Insider", "")),
+                    "position": str(row.get("Position", "")),
+                    "transactionType": transaction_type,
+                    "shares": shares,
+                    "value": value,
+                    "text": text,
+                    "date": date_val,
+                    "ownership": str(row.get("Ownership", "D")),
+                })
+    except Exception:
+        pass
+
+    # Insider purchase summary (last 6 months)
+    purchases_6m = {"purchaseShares": None, "purchaseTrans": None,
+                    "saleShares": None, "saleTrans": None}
+    try:
+        ip = tk.insider_purchases
+        if ip is not None and not ip.empty:
+            for _, row in ip.iterrows():
+                label = str(row.get("Insider Purchases Last 6m", "")).lower()
+                if "purchase" in label:
+                    purchases_6m["purchaseShares"] = safe_int(row.get("Shares"))
+                    purchases_6m["purchaseTrans"] = safe_int(row.get("Trans"))
+                elif "sale" in label or "sell" in label:
+                    purchases_6m["saleShares"] = safe_int(row.get("Shares"))
+                    purchases_6m["saleTrans"] = safe_int(row.get("Trans"))
+    except Exception:
+        pass
+
+    # Ownership breakdown
+    insider_pct = safe_float(info.get("heldPercentInsiders"))
+    institution_pct = safe_float(info.get("heldPercentInstitutions"))
+
+    # Net sentiment
+    buys = sum(1 for t in transactions if t["transactionType"] == "Purchase")
+    sells = sum(1 for t in transactions if t["transactionType"] == "Sale")
+    net_sentiment = "Net Buyers" if buys > sells else "Net Sellers" if sells > buys else "Neutral"
+
+    result = {
+        "ticker": ticker.upper(),
+        "name": info.get("shortName", ticker.upper()),
+        "insiderOwnership": insider_pct,
+        "institutionalOwnership": institution_pct,
+        "netSentiment": net_sentiment,
+        "buyCount": buys,
+        "sellCount": sells,
+        "purchases6m": purchases_6m,
+        "transactions": transactions,
     }
     print(json.dumps(result))
 
@@ -513,6 +666,9 @@ def main():
     p_analyst = subparsers.add_parser("analyst")
     p_analyst.add_argument("ticker")
 
+    p_insider = subparsers.add_parser("insider")
+    p_insider.add_argument("ticker")
+
     subparsers.add_parser("universe")
 
     args = parser.parse_args()
@@ -530,6 +686,8 @@ def main():
             cmd_peers(args.ticker, args.period)
         elif args.command == "analyst":
             cmd_analyst(args.ticker)
+        elif args.command == "insider":
+            cmd_insider(args.ticker)
         elif args.command == "universe":
             cmd_universe()
         else:

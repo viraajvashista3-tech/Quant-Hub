@@ -4,7 +4,7 @@ import { useTicker } from "@/lib/ticker-context";
 import { useProMode } from "@/lib/pro-mode-context";
 import { useTheme, ACCENT_COLORS } from "@/lib/theme-context";
 import { Input } from "@/components/ui/input";
-import { Search, Activity, BookOpen, Users, BarChart2, Compass, Zap, Sun, Moon, Bot, Settings2, X } from "lucide-react";
+import { Search, Activity, BookOpen, Users, BarChart2, Compass, Zap, Sun, Moon, Bot, Settings2, X, Eye } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarFooter } from "@/components/ui/sidebar";
 
 function SettingsPanel({ onClose }: { onClose: () => void }) {
@@ -157,6 +157,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   <Link href="/fundamentals" className="flex items-center gap-3">
                     <BookOpen className="h-4 w-4" />
                     <span>Fundamentals</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={location === "/insider"}>
+                  <Link href="/insider" className="flex items-center gap-3">
+                    <Eye className="h-4 w-4" />
+                    <span>Insider</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

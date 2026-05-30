@@ -1,11 +1,12 @@
 import { useTicker } from "@/lib/ticker-context";
-import { useLabels } from "@/lib/pro-mode-context";
+import { useLabels, useProMode } from "@/lib/pro-mode-context";
 import { useGetStockAnalyst, getGetStockAnalystQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/format";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Zap } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 function gradeColor(grade: string | null | undefined) {
   if (!grade) return "text-muted-foreground";
@@ -19,7 +20,7 @@ function TargetChangeChip({ action, current, prior }: { action: string | null | 
   if (!current) return null;
   const a = (action || "").toLowerCase();
   const raised = a === "raises" || a === "raised";
-  const lowered = a === "lowers" || a === "lowered" || a === "lowered";
+  const lowered = a === "lowers" || a === "lowered";
   const change = prior && current ? current - prior : null;
 
   return (
@@ -36,6 +37,7 @@ function TargetChangeChip({ action, current, prior }: { action: string | null | 
 export default function Analyst() {
   const { activeTicker } = useTicker();
   const label = useLabels();
+  const { isPro } = useProMode();
 
   const { data: analyst, isLoading } = useGetStockAnalyst(activeTicker, {
     query: { enabled: !!activeTicker, queryKey: getGetStockAnalystQueryKey(activeTicker) }
@@ -52,12 +54,13 @@ export default function Analyst() {
     pricePos = Math.max(0, Math.min(100, ((currentPrice - minTarget) / (maxTarget - minTarget)) * 100));
   }
 
-  // Count raises vs lowers for summary
   const actions = analyst?.recentActions || [];
   const raises = actions.filter(a => (a.priceTargetAction || "").toLowerCase() === "raises").length;
   const lowers = actions.filter(a => (a.priceTargetAction || "").toLowerCase() === "lowers").length;
   const upgrades = actions.filter(a => (a.action || "").toLowerCase() === "up").length;
   const downgrades = actions.filter(a => (a.action || "").toLowerCase() === "down").length;
+
+  const recTrend = analyst?.recommendationTrend || [];
 
   return (
     <div className="space-y-6">
@@ -153,12 +156,44 @@ export default function Analyst() {
             </Card>
           </div>
 
+          {/* Pro Mode: Recommendation Trend Chart */}
+          {isPro && recTrend.length > 0 && (
+            <Card className="bg-card rounded-none border-primary/30">
+              <CardHeader className="bg-primary/5">
+                <CardTitle className="text-sm font-medium text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Zap className="h-4 w-4" /> Pro — Analyst Recommendation Trend (4 Months)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={[...recTrend].reverse()} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis dataKey="period" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 0 }}
+                        itemStyle={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <Bar dataKey="strongBuy" stackId="a" fill="#16a34a" name="Strong Buy" />
+                      <Bar dataKey="buy" stackId="a" fill="#4ade80" name="Buy" />
+                      <Bar dataKey="hold" stackId="a" fill="#f59e0b" name="Hold" />
+                      <Bar dataKey="sell" stackId="a" fill="#f87171" name="Sell" />
+                      <Bar dataKey="strongSell" stackId="a" fill="#dc2626" name="Strong Sell" radius={[2, 2, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Broker price target cards */}
           {actions.filter(a => a.currentPriceTarget).length > 0 && (
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Recent Broker Targets</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                {actions.filter(a => a.currentPriceTarget).slice(0, 10).map((action, i) => {
+                {actions.filter(a => a.currentPriceTarget).slice(0, isPro ? 20 : 10).map((action, i) => {
                   const ta = (action.priceTargetAction || "").toLowerCase();
                   const raised = ta === "raises";
                   const lowered = ta === "lowers";
@@ -211,7 +246,7 @@ export default function Analyst() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {actions.map((action, i) => (
+                    {actions.slice(0, isPro ? 40 : 20).map((action, i) => (
                       <TableRow key={i} className="border-border">
                         <TableCell className="font-mono text-xs text-muted-foreground">{action.date || '-'}</TableCell>
                         <TableCell className="font-semibold text-sm">{action.firm}</TableCell>
