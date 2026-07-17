@@ -4,7 +4,7 @@ import { useTicker } from "@/lib/ticker-context";
 import { useProMode, MODE_META, type Mode } from "@/lib/pro-mode-context";
 import { useTheme, ACCENT_COLORS } from "@/lib/theme-context";
 import { Input } from "@/components/ui/input";
-import { Search, Activity, BookOpen, Users, BarChart2, Compass, Sun, Moon, Bot, Settings2, X, Eye } from "lucide-react";
+import { Search, Activity, BookOpen, Users, BarChart2, Compass, Sun, Moon, Bot, Settings2, X, Eye, Globe } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarFooter } from "@/components/ui/sidebar";
 
 const MODES: Mode[] = ["beginner", "amateur", "pro", "master"];
@@ -171,6 +171,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   <Link href="/insider" className="flex items-center gap-3">
                     <Eye className="h-4 w-4" />
                     <span>Insider</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={location === "/market"}>
+                  <Link href="/market" className="flex items-center gap-3">
+                    <Globe className="h-4 w-4" />
+                    <span>Market Pulse</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

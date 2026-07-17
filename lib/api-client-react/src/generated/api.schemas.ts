@@ -68,6 +68,36 @@ export interface StockOverview {
   goldenCross?: boolean | null;
 }
 
+export interface MarketPulseItem {
+  symbol: string;
+  label: string;
+  price: number;
+  change: number;
+  changePct: number;
+  change1wPct: number;
+  change1mPct: number;
+}
+
+export type MarketPulseMarketMood = typeof MarketPulseMarketMood[keyof typeof MarketPulseMarketMood];
+
+
+export const MarketPulseMarketMood = {
+  Extreme_Fear: 'Extreme Fear',
+  Fear: 'Fear',
+  Neutral: 'Neutral',
+  Greed: 'Greed',
+  Extreme_Greed: 'Extreme Greed',
+} as const;
+
+export interface MarketPulse {
+  indices: MarketPulseItem[];
+  sectors: MarketPulseItem[];
+  macro: MarketPulseItem[];
+  vix: number;
+  marketMood: MarketPulseMarketMood;
+  rotationNote: string;
+}
+
 export interface PriceBar {
   date: string;
   open: number;

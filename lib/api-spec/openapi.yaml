@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: stock
     description: Stock data operations
+  - name: market
+    description: Market overview operations
   - name: universe
     description: Stock universe operations
 paths:
@@ -217,6 +219,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /market/pulse:
+    get:
+      operationId: getMarketPulse
+      tags: [market]
+      summary: Live market overview — indices, sectors, macro, fear gauge
+      responses:
+        "200":
+          description: Market pulse data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketPulse"
+        "500":
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /universe:
     get:
       operationId: getUniverse
@@ -311,6 +332,49 @@ components:
           type: ["boolean", "null"]
         goldenCross:
           type: ["boolean", "null"]
+
+    MarketPulseItem:
+      type: object
+      required: [symbol, label, price, change, changePct, change1wPct, change1mPct]
+      properties:
+        symbol:
+          type: string
+        label:
+          type: string
+        price:
+          type: number
+        change:
+          type: number
+        changePct:
+          type: number
+        change1wPct:
+          type: number
+        change1mPct:
+          type: number
+
+    MarketPulse:
+      type: object
+      required: [indices, sectors, macro, vix, marketMood, rotationNote]
+      properties:
+        indices:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketPulseItem"
+        sectors:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketPulseItem"
+        macro:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketPulseItem"
+        vix:
+          type: number
+        marketMood:
+          type: string
+          enum: [Extreme Fear, Fear, Neutral, Greed, Extreme Greed]
+        rotationNote:
+          type: string
 
     PriceBar:
       type: object

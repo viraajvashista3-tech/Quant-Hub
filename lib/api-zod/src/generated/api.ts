@@ -261,6 +261,43 @@ export const GetStockInsiderResponse = zod.object({
 
 
 /**
+ * @summary Live market overview — indices, sectors, macro, fear gauge
+ */
+export const GetMarketPulseResponse = zod.object({
+  "indices": zod.array(zod.object({
+  "symbol": zod.string(),
+  "label": zod.string(),
+  "price": zod.number(),
+  "change": zod.number(),
+  "changePct": zod.number(),
+  "change1wPct": zod.number(),
+  "change1mPct": zod.number()
+})),
+  "sectors": zod.array(zod.object({
+  "symbol": zod.string(),
+  "label": zod.string(),
+  "price": zod.number(),
+  "change": zod.number(),
+  "changePct": zod.number(),
+  "change1wPct": zod.number(),
+  "change1mPct": zod.number()
+})),
+  "macro": zod.array(zod.object({
+  "symbol": zod.string(),
+  "label": zod.string(),
+  "price": zod.number(),
+  "change": zod.number(),
+  "changePct": zod.number(),
+  "change1wPct": zod.number(),
+  "change1mPct": zod.number()
+})),
+  "vix": zod.number(),
+  "marketMood": zod.enum(['Extreme Fear', 'Fear', 'Neutral', 'Greed', 'Extreme Greed']),
+  "rotationNote": zod.string()
+})
+
+
+/**
  * @summary Full stock universe grouped by sector
  */
 export const GetUniverseResponseItem = zod.object({

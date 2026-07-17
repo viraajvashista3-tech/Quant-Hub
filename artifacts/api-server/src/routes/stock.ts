@@ -102,6 +102,17 @@ router.get("/stock/:ticker/insider", async (req, res) => {
   }
 });
 
+router.get("/market/pulse", async (_req, res) => {
+  try {
+    const data = await runPython(["market_pulse"]);
+    res.json(data);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    _req.log.warn({ err: msg }, "market_pulse failed");
+    res.status(500).json({ error: msg });
+  }
+});
+
 router.get("/universe", async (_req, res) => {
   try {
     const data = await runPython(["universe"]);

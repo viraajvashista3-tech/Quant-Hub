@@ -681,6 +681,97 @@ def cmd_universe():
     print(json.dumps(result))
 
 
+PULSE_INDICES = [
+    ("SPY",  "S&P 500"),
+    ("QQQ",  "Nasdaq 100"),
+    ("DIA",  "Dow Jones"),
+    ("IWM",  "Russell 2000"),
+]
+
+PULSE_SECTORS = [
+    ("XLK",  "Technology"),
+    ("XLF",  "Financials"),
+    ("XLE",  "Energy"),
+    ("XLV",  "Healthcare"),
+    ("XLC",  "Comm. Services"),
+    ("XLI",  "Industrials"),
+    ("XLP",  "Cons. Staples"),
+    ("XLY",  "Cons. Discret."),
+    ("XLB",  "Materials"),
+    ("XLRE", "Real Estate"),
+    ("XLU",  "Utilities"),
+]
+
+PULSE_MACRO = [
+    ("^VIX",  "VIX (Fear)"),
+    ("^TNX",  "10Y Yield"),
+    ("GLD",   "Gold"),
+    ("USO",   "Oil"),
+    ("UUP",   "US Dollar"),
+    ("BTC-USD", "Bitcoin"),
+]
+
+
+def cmd_market_pulse():
+    all_syms = [s for s, _ in PULSE_INDICES + PULSE_SECTORS + PULSE_MACRO]
+    labels   = {s: l for s, l in PULSE_INDICES + PULSE_SECTORS + PULSE_MACRO}
+
+    raw = yf.download(all_syms, period="1mo", auto_adjust=True, progress=False)
+    close = raw["Close"] if "Close" in raw.columns else raw
+
+    def make_item(sym):
+        try:
+            col = close[sym].dropna()
+            if len(col) < 2:
+                return None
+            price     = float(col.iloc[-1])
+            prev      = float(col.iloc[-2])
+            week_ago  = float(col.iloc[-6])  if len(col) >= 6  else float(col.iloc[0])
+            month_ago = float(col.iloc[0])
+            def pct(a, b): return round((a - b) / b * 100, 2) if b else 0.0
+            return {
+                "symbol":     sym,
+                "label":      labels.get(sym, sym),
+                "price":      round(price, 4),
+                "change":     round(price - prev, 4),
+                "changePct":  pct(price, prev),
+                "change1wPct": pct(price, week_ago),
+                "change1mPct": pct(price, month_ago),
+            }
+        except Exception:
+            return None
+
+    indices = [x for s, _ in PULSE_INDICES  if (x := make_item(s))]
+    sectors = [x for s, _ in PULSE_SECTORS  if (x := make_item(s))]
+    macro   = [x for s, _ in PULSE_MACRO    if (x := make_item(s))]
+
+    vix_item = next((m for m in macro if m["symbol"] == "^VIX"), None)
+    vix = vix_item["price"] if vix_item else 20.0
+    mood = ("Extreme Fear" if vix >= 35 else
+            "Fear"         if vix >= 25 else
+            "Neutral"      if vix >= 18 else
+            "Greed"        if vix >= 12 else "Extreme Greed")
+
+    # Sector rotation context: best & worst 1-week performers
+    sorted_sectors = sorted(sectors, key=lambda x: x["change1wPct"], reverse=True)
+    rotation_note  = ""
+    if sorted_sectors:
+        best  = sorted_sectors[0]
+        worst = sorted_sectors[-1]
+        rotation_note = (f"Money is rotating into {best['label']} "
+                         f"(+{best['change1wPct']:.1f}% 1W) and out of "
+                         f"{worst['label']} ({worst['change1wPct']:.1f}% 1W).")
+
+    print(json.dumps({
+        "indices":      indices,
+        "sectors":      sorted(sectors, key=lambda x: x["changePct"], reverse=True),
+        "macro":        macro,
+        "vix":          round(vix, 2),
+        "marketMood":   mood,
+        "rotationNote": rotation_note,
+    }))
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main():
@@ -711,6 +802,7 @@ def main():
     p_insider.add_argument("ticker")
 
     subparsers.add_parser("universe")
+    subparsers.add_parser("market_pulse")
 
     args = parser.parse_args()
 
@@ -731,6 +823,8 @@ def main():
             cmd_insider(args.ticker)
         elif args.command == "universe":
             cmd_universe()
+        elif args.command == "market_pulse":
+            cmd_market_pulse()
         else:
             print(json.dumps({"error": "Unknown command"}))
             sys.exit(1)
