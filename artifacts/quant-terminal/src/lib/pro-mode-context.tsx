@@ -1,30 +1,55 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-interface ProModeContextValue {
+export type Mode = "beginner" | "amateur" | "pro" | "master";
+
+const MODE_ORDER: Mode[] = ["beginner", "amateur", "pro", "master"];
+
+export const MODE_META: Record<Mode, { emoji: string; label: string; desc: string }> = {
+  beginner: { emoji: "🌱", label: "Beginner", desc: "Plain English, no jargon" },
+  amateur:  { emoji: "📊", label: "Amateur",  desc: "Charts & key metrics" },
+  pro:      { emoji: "⚡", label: "Pro",      desc: "Full technical analysis" },
+  master:   { emoji: "🔬", label: "Master",   desc: "Raw data & all signals" },
+};
+
+interface ModeContextValue {
+  mode: Mode;
+  setMode: (m: Mode) => void;
+  isAtLeast: (m: Mode) => boolean;
   isPro: boolean;
-  toggle: () => void;
 }
 
-const ProModeContext = createContext<ProModeContextValue>({ isPro: false, toggle: () => {} });
+const ModeContext = createContext<ModeContextValue>({
+  mode: "amateur",
+  setMode: () => {},
+  isAtLeast: () => false,
+  isPro: false,
+});
 
 export function ProModeProvider({ children }: { children: ReactNode }) {
-  const [isPro, setIsPro] = useState(() => {
-    try { return localStorage.getItem("proMode") === "true"; } catch { return false; }
+  const [mode, setModeState] = useState<Mode>(() => {
+    try {
+      const saved = localStorage.getItem("viewMode") as Mode | null;
+      if (saved && MODE_ORDER.includes(saved)) return saved;
+      return "amateur";
+    } catch { return "amateur"; }
   });
 
   useEffect(() => {
-    try { localStorage.setItem("proMode", String(isPro)); } catch {}
-  }, [isPro]);
+    try { localStorage.setItem("viewMode", mode); } catch {}
+  }, [mode]);
+
+  const setMode = (m: Mode) => setModeState(m);
+  const isAtLeast = (m: Mode) => MODE_ORDER.indexOf(mode) >= MODE_ORDER.indexOf(m);
 
   return (
-    <ProModeContext.Provider value={{ isPro, toggle: () => setIsPro((p) => !p) }}>
+    <ModeContext.Provider value={{ mode, setMode, isAtLeast, isPro: isAtLeast("pro") }}>
       {children}
-    </ProModeContext.Provider>
+    </ModeContext.Provider>
   );
 }
 
 export function useProMode() {
-  return useContext(ProModeContext);
+  return useContext(ModeContext);
 }
 
 type LabelKey =
@@ -109,6 +134,6 @@ const PRO: Record<LabelKey, string> = {
 };
 
 export function useLabels() {
-  const { isPro } = useProMode();
-  return (key: LabelKey) => (isPro ? PRO[key] : SIMPLE[key]);
+  const { isAtLeast } = useProMode();
+  return (key: LabelKey) => (isAtLeast("pro") ? PRO[key] : SIMPLE[key]);
 }

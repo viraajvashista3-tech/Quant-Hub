@@ -37,7 +37,8 @@ function TargetChangeChip({ action, current, prior }: { action: string | null | 
 export default function Analyst() {
   const { activeTicker } = useTicker();
   const label = useLabels();
-  const { isPro } = useProMode();
+  const { isAtLeast } = useProMode();
+  const isPro = isAtLeast("pro");
 
   const { data: analyst, isLoading } = useGetStockAnalyst(activeTicker, {
     query: { enabled: !!activeTicker, queryKey: getGetStockAnalystQueryKey(activeTicker) }

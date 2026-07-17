@@ -25,7 +25,8 @@ function txBadgeClass(type: string) {
 
 export default function Insider() {
   const { activeTicker } = useTicker();
-  const { isPro } = useProMode();
+  const { isAtLeast } = useProMode();
+  const isPro = isAtLeast("pro");
 
   const { data: insider, isLoading } = useGetStockInsider(activeTicker, {
     query: { enabled: !!activeTicker, queryKey: getGetStockInsiderQueryKey(activeTicker) }

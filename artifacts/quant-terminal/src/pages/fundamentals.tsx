@@ -9,7 +9,8 @@ import { Zap } from "lucide-react";
 export default function Fundamentals() {
   const { activeTicker } = useTicker();
   const label = useLabels();
-  const { isPro } = useProMode();
+  const { isAtLeast } = useProMode();
+  const isPro = isAtLeast("pro");
 
   const { data: fund, isLoading } = useGetStockFundamentals(activeTicker, {
     query: { enabled: !!activeTicker, queryKey: getGetStockFundamentalsQueryKey(activeTicker) }

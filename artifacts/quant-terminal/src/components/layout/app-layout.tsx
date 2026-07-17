@@ -1,26 +1,60 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useTicker } from "@/lib/ticker-context";
-import { useProMode } from "@/lib/pro-mode-context";
+import { useProMode, MODE_META, type Mode } from "@/lib/pro-mode-context";
 import { useTheme, ACCENT_COLORS } from "@/lib/theme-context";
 import { Input } from "@/components/ui/input";
-import { Search, Activity, BookOpen, Users, BarChart2, Compass, Zap, Sun, Moon, Bot, Settings2, X, Eye } from "lucide-react";
+import { Search, Activity, BookOpen, Users, BarChart2, Compass, Sun, Moon, Bot, Settings2, X, Eye } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarFooter } from "@/components/ui/sidebar";
+
+const MODES: Mode[] = ["beginner", "amateur", "pro", "master"];
 
 function SettingsPanel({ onClose }: { onClose: () => void }) {
   const { theme, toggleTheme, accentColor, setAccentColor } = useTheme();
-  const { isPro, toggle } = useProMode();
+  const { mode, setMode } = useProMode();
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      {/* backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative ml-64 w-72 bg-card border-r border-border h-full overflow-y-auto p-5 space-y-6 shadow-2xl">
+      <div className="relative ml-64 w-80 bg-card border-r border-border h-full overflow-y-auto p-5 space-y-6 shadow-2xl">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Customise</span>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
             <X className="h-4 w-4" />
           </button>
+        </div>
+
+        {/* View Mode */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">View Mode</p>
+          <div className="space-y-2">
+            {MODES.map((m) => {
+              const meta = MODE_META[m];
+              const active = mode === m;
+              return (
+                <button
+                  key={m}
+                  onClick={() => setMode(m)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 border transition-colors text-left ${
+                    active
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:border-primary/40 hover:bg-primary/5 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span className="text-xl leading-none">{meta.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-xs font-bold uppercase tracking-widest ${active ? "text-primary" : "text-foreground"}`}>
+                      {meta.label}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">{meta.desc}</div>
+                  </div>
+                  {active && (
+                    <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Theme */}
@@ -52,40 +86,11 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
                     : "border-border hover:border-border/80 text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <span
-                  className="w-5 h-5 rounded-full block"
-                  style={{ background: `hsl(${c.hsl})` }}
-                />
+                <span className="w-5 h-5 rounded-full block" style={{ background: `hsl(${c.hsl})` }} />
                 {c.label}
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Pro mode */}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Label Style</p>
-          <button
-            onClick={toggle}
-            className={`w-full flex items-center justify-between px-3 py-2.5 border transition-colors ${
-              isPro
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:border-border/80"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Zap className={`h-4 w-4 ${isPro ? "text-primary" : ""}`} />
-              <span className="text-xs font-semibold uppercase tracking-widest">
-                {isPro ? "Pro Mode" : "Simple Mode"}
-              </span>
-            </div>
-            <div className={`relative w-9 h-5 rounded-full transition-colors ${isPro ? "bg-primary" : "bg-muted"}`}>
-              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${isPro ? "left-4" : "left-0.5"}`} />
-            </div>
-          </button>
-          <p className="text-[10px] text-muted-foreground mt-2">
-            {isPro ? "Advanced terminology & metrics" : "Plain-English labels for every metric"}
-          </p>
         </div>
       </div>
     </div>

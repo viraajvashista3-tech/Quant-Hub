@@ -140,7 +140,8 @@ export default function Terminal() {
   const [period, setPeriod] = useState<'ytd'|'6mo'|'1y'|'2y'|'5y'>('1y');
   const [showBB, setShowBB] = useState(false);
   const label = useLabels();
-  const { isPro } = useProMode();
+  const { isAtLeast, mode } = useProMode();
+  const isPro = isAtLeast("pro");
 
   const { data: overview, isLoading: isLoadingOverview } = useGetStockOverview(activeTicker, {
     query: { enabled: !!activeTicker, queryKey: getGetStockOverviewQueryKey(activeTicker) }
@@ -169,6 +170,93 @@ export default function Terminal() {
 
   if (!activeTicker) return <div className="p-8 text-center text-muted-foreground">Select a ticker to begin analysis.</div>;
 
+  /* ── BEGINNER VIEW ────────────────────────────────────────────────────── */
+  if (mode === "beginner") {
+    const limitedData = !overview?.ma50 && !overview?.ma200;
+    const signalEmoji = overview?.signal === "BUY" ? "📈" : overview?.signal === "AVOID" ? "📉" : "⚖️";
+    const signalBg = overview?.signal === "BUY" ? "bg-green-500/10 border-green-500/40" : overview?.signal === "AVOID" ? "bg-destructive/10 border-destructive/40" : "bg-muted/30 border-border";
+    const signalText = overview?.signal === "BUY" ? "text-green-400" : overview?.signal === "AVOID" ? "text-destructive" : "text-foreground";
+    const signalWord = overview?.signal === "BUY" ? "Looks like a good time to consider buying" : overview?.signal === "AVOID" ? "Signals suggest caution — consider sitting this one out" : "Mixed signals — a 'wait and see' situation";
+    return (
+      <div className="max-w-2xl mx-auto space-y-5">
+        {/* Hero */}
+        <Card className={`border rounded-none ${signalBg}`}>
+          <CardContent className="p-6">
+            {isLoadingOverview ? <Skeleton className="h-40 w-full" /> : overview ? (
+              <>
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div>
+                    <div className="text-4xl mb-2">{signalEmoji}</div>
+                    <h1 className="text-2xl font-bold text-foreground">{overview.name}</h1>
+                    <p className="text-sm text-muted-foreground mt-1">{overview.ticker} — Stock price: <span className="font-mono text-foreground">${overview.price.toFixed(2)}</span> <span className={overview.change >= 0 ? "text-green-500" : "text-destructive"}>({overview.change >= 0 ? "+" : ""}{overview.changePercent.toFixed(2)}% today)</span></p>
+                  </div>
+                  <Badge variant="secondary" className={`text-base px-4 py-2 rounded-none font-bold ${overview.signal === 'BUY' ? 'bg-green-600 text-white' : overview.signal === 'AVOID' ? 'bg-destructive text-white' : ''}`}>
+                    {overview.signal}
+                  </Badge>
+                </div>
+                <p className={`text-lg font-semibold ${signalText}`}>{signalWord}</p>
+                {limitedData && (
+                  <div className="mt-3 flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-2">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    Not enough price history to compute all signals reliably. This stock may be very new, delisted, or thinly traded.
+                  </div>
+                )}
+              </>
+            ) : null}
+          </CardContent>
+        </Card>
+
+        {/* Why section */}
+        {!isLoadingOverview && overview && signalReasons.length > 0 && (
+          <Card className="bg-card rounded-none border-border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold text-foreground">Why does it say that?</CardTitle>
+              <p className="text-xs text-muted-foreground">Our algorithm checked 7 signals. Here's what it found:</p>
+            </CardHeader>
+            <CardContent className="p-0">
+              {signalReasons.map((item, i) => (
+                <div key={i} className="flex gap-3 px-4 py-3 border-b border-border/50 last:border-0">
+                  <div className="shrink-0 mt-0.5 text-lg leading-none">
+                    {item.icon === "good" ? "✅" : item.icon === "bad" ? "❌" : "⚠️"}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{item.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* News */}
+        <Card className="bg-card rounded-none border-border overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold text-foreground">What people are saying</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {isLoadingNews ? (
+              <div className="p-4 space-y-3">{Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+            ) : news?.headlines?.length ? (
+              <div className="divide-y divide-border">
+                {news.headlines.slice(0, 5).map((item, idx) => (
+                  <a key={idx} href={item.url} target="_blank" rel="noreferrer" className="block p-4 hover:bg-muted/30 transition-colors">
+                    <p className="text-sm font-medium line-clamp-2">{item.title}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : ''}</p>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 text-center text-muted-foreground text-sm">No recent news found.</div>
+            )}
+          </CardContent>
+        </Card>
+
+        <p className="text-xs text-muted-foreground text-center pb-2">⚠️ This is not financial advice. Always do your own research before investing.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -191,18 +279,26 @@ export default function Terminal() {
         </div>
 
         {isLoadingOverview ? <Skeleton className="h-16 w-32" /> : overview && (
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="text-sm text-muted-foreground uppercase tracking-widest">{label("quantScore")}</div>
-              <div className="text-3xl font-bold font-mono text-primary">{overview.quantScore.toFixed(1)}</div>
+          <div className="flex flex-col items-end gap-2">
+            {(!overview.ma50 && !overview.ma200) && (
+              <div className="flex items-center gap-1.5 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                Limited data — signals may not be reliable
+              </div>
+            )}
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="text-sm text-muted-foreground uppercase tracking-widest">{label("quantScore")}</div>
+                <div className="text-3xl font-bold font-mono text-primary">{overview.quantScore.toFixed(1)}</div>
+              </div>
+              <Badge variant={
+                overview.signal === "BUY" ? "default" :
+                overview.signal === "AVOID" ? "destructive" :
+                "secondary"
+              } className={`text-lg px-4 py-2 uppercase tracking-widest rounded-none ${overview.signal === 'BUY' ? 'bg-green-600 text-black hover:bg-green-500' : ''}`}>
+                {overview.signal}
+              </Badge>
             </div>
-            <Badge variant={
-              overview.signal === "BUY" ? "default" :
-              overview.signal === "AVOID" ? "destructive" :
-              "secondary"
-            } className={`text-lg px-4 py-2 uppercase tracking-widest rounded-none ${overview.signal === 'BUY' ? 'bg-green-600 text-black hover:bg-green-500' : ''}`}>
-              {overview.signal}
-            </Badge>
           </div>
         )}
       </div>
