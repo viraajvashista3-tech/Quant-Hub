@@ -7,7 +7,8 @@ import {
   useGetStockNews,
   getGetStockOverviewQueryKey,
   getGetStockHistoryQueryKey,
-  getGetStockNewsQueryKey
+  getGetStockNewsQueryKey,
+  StockOverview,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,123 @@ import { formatCurrency, formatPercent, formatLargeNumber } from "@/lib/format";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, ReferenceLine } from "recharts";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { TrendingUp, TrendingDown, Minus, Zap } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Zap, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+
+type ReasonItem = {
+  icon: "good" | "bad" | "neutral";
+  label: string;
+  detail: string;
+  score: number;
+};
+
+function buildSignalReasons(o: StockOverview | null): ReasonItem[] {
+  if (!o) return [];
+  const items: ReasonItem[] = [];
+  const fmt = (n: number) => n.toFixed(2);
+  const pct = (n: number) => (n > 0 ? "+" : "") + n.toFixed(1) + "%";
+
+  // 1. Trend: MA200
+  if (o.ma200) {
+    const diff = ((o.price - o.ma200) / o.ma200) * 100;
+    items.push({
+      icon: o.aboveMa200 ? "good" : "bad",
+      label: o.aboveMa200 ? "Above 200-day MA" : "Below 200-day MA",
+      detail: o.aboveMa200
+        ? `Price $${fmt(o.price)} is ${pct(diff)} above MA200 ($${fmt(o.ma200)}) — the long-term trend is bullish.`
+        : `Price $${fmt(o.price)} is ${pct(diff)} below MA200 ($${fmt(o.ma200)}) — the primary trend remains bearish.`,
+      score: o.aboveMa200 ? 15 : -15,
+    });
+  }
+
+  // 2. Trend: MA50
+  if (o.ma50) {
+    const diff = ((o.price - o.ma50) / o.ma50) * 100;
+    items.push({
+      icon: o.aboveMa50 ? "good" : "bad",
+      label: o.aboveMa50 ? "Above 50-day MA" : "Below 50-day MA",
+      detail: o.aboveMa50
+        ? `Price is ${pct(diff)} above MA50 ($${fmt(o.ma50)}) — short/mid-term trend is upward.`
+        : `Price is ${pct(Math.abs(diff))} below MA50 ($${fmt(o.ma50)}) — short/mid-term trend is downward.`,
+      score: o.aboveMa50 ? 10 : -10,
+    });
+  }
+
+  // 3. Trend: Golden/Death Cross
+  if (o.ma50 && o.ma200) {
+    items.push({
+      icon: o.goldenCross ? "good" : "bad",
+      label: o.goldenCross ? "Golden Cross" : "Death Cross",
+      detail: o.goldenCross
+        ? `MA50 ($${fmt(o.ma50)}) > MA200 ($${fmt(o.ma200)}) — a Golden Cross formation is a constructive long-term signal.`
+        : `MA50 ($${fmt(o.ma50)}) < MA200 ($${fmt(o.ma200)}) — a Death Cross formation signals medium-term weakness.`,
+      score: o.goldenCross ? 5 : -5,
+    });
+  }
+
+  // 4. RSI momentum
+  const rsi = o.rsi;
+  let rsiIcon: ReasonItem["icon"] = "neutral";
+  let rsiLabel = "";
+  let rsiDetail = "";
+  let rsiScore = 0;
+  if (rsi >= 70) {
+    rsiIcon = "bad"; rsiLabel = "RSI Overbought"; rsiScore = -10;
+    rsiDetail = `RSI ${rsi.toFixed(0)} is in overbought territory (≥70). Price may be extended — elevated pullback risk.`;
+  } else if (rsi >= 60) {
+    rsiIcon = "good"; rsiLabel = "RSI — Strong Bullish Momentum"; rsiScore = 20;
+    rsiDetail = `RSI ${rsi.toFixed(0)} is in the bullish momentum zone (60–70) — healthy strength without overbought risk.`;
+  } else if (rsi >= 50) {
+    rsiIcon = "good"; rsiLabel = "RSI — Mildly Bullish"; rsiScore = 10;
+    rsiDetail = `RSI ${rsi.toFixed(0)} is above the mid-line (50–60) — buyers are in control but momentum is modest.`;
+  } else if (rsi >= 40) {
+    rsiIcon = "neutral"; rsiLabel = "RSI — Neutral / Mildly Bearish"; rsiScore = -5;
+    rsiDetail = `RSI ${rsi.toFixed(0)} is just below the mid-line (40–50) — neither camp has conviction.`;
+  } else if (rsi >= 30) {
+    rsiIcon = "bad"; rsiLabel = "RSI — Weak / Bearish"; rsiScore = -15;
+    rsiDetail = `RSI ${rsi.toFixed(0)} reflects weak momentum (30–40). Sellers are in control near-term.`;
+  } else {
+    rsiIcon = "bad"; rsiLabel = "RSI — Deeply Oversold"; rsiScore = -20;
+    rsiDetail = `RSI ${rsi.toFixed(0)} is deeply oversold (<30). Potential for a technical bounce but underlying trend is bearish.`;
+  }
+  items.push({ icon: rsiIcon, label: rsiLabel, detail: rsiDetail, score: rsiScore });
+
+  // 5. MACD
+  const macdBull = o.macd > o.macdSignal;
+  items.push({
+    icon: macdBull ? "good" : "bad",
+    label: macdBull ? "MACD — Bullish Crossover" : "MACD — Bearish Crossover",
+    detail: macdBull
+      ? `MACD (${fmt(o.macd)}) is above its signal line (${fmt(o.macdSignal)}) — short-term momentum is positive.`
+      : `MACD (${fmt(o.macd)}) is below its signal line (${fmt(o.macdSignal)}) — short-term momentum is negative.`,
+    score: macdBull ? 15 : -15,
+  });
+
+  // 6. Volume
+  const vr = o.volRatio ?? (o.volume / o.avgVolume);
+  const vrPct = (vr * 100).toFixed(0);
+  items.push({
+    icon: vr >= 1.5 ? "good" : vr >= 1.0 ? "neutral" : "neutral",
+    label: vr >= 1.5 ? "Volume Surge" : vr >= 1.0 ? "Normal Volume" : "Below-Average Volume",
+    detail: vr >= 1.5
+      ? `Today's volume is ${vrPct}% of the 20-day average — above-average activity adds conviction to the current move.`
+      : vr >= 1.0
+      ? `Volume is at ${vrPct}% of the 20-day average — in line with normal trading. No extra conviction either way.`
+      : `Volume is only ${vrPct}% of the 20-day average — thin participation, signals may lack follow-through.`,
+    score: vr >= 1.5 ? 10 : vr >= 1.0 ? 5 : 0,
+  });
+
+  // 7. News Sentiment
+  const s = o.sentimentScore;
+  const sAbs = Math.abs(s);
+  const sIcon: ReasonItem["icon"] = s >= 0.1 ? "good" : s <= -0.1 ? "bad" : "neutral";
+  const sLabel = s >= 0.3 ? "News — Strongly Bullish" : s >= 0.1 ? "News — Mildly Bullish" : s <= -0.3 ? "News — Strongly Bearish" : s <= -0.1 ? "News — Mildly Bearish" : "News — Neutral";
+  const sDetail = sAbs > 0.1
+    ? `Sentiment score ${s.toFixed(2)} (VADER compound) from recent headlines — ${s > 0 ? "positive" : "negative"} media flow ${s > 0 ? "supports" : "weighs on"} the signal.`
+    : `Sentiment score ${s.toFixed(2)} — news coverage is broadly neutral and contributes little either way.`;
+  items.push({ icon: sIcon, label: sLabel, detail: sDetail, score: Math.round(s * 40) });
+
+  return items;
+}
 
 export default function Terminal() {
   const { activeTicker } = useTicker();
@@ -40,12 +157,15 @@ export default function Terminal() {
   const quantBreakdown = useMemo(() => {
     if (!overview) return null;
     return [
-      { label: "Trend (Price vs MA200)", value: overview.trendScore ?? 0, max: 20, color: (overview.trendScore ?? 0) >= 0 ? "#10b981" : "hsl(var(--destructive))" },
-      { label: "Momentum (RSI)", value: overview.momentumScore ?? 0, max: 20, color: (overview.momentumScore ?? 0) >= 0 ? "#10b981" : "hsl(var(--destructive))" },
+      { label: "Trend (MA50 + MA200 + Cross)", value: overview.trendScore ?? 0, max: 30, color: (overview.trendScore ?? 0) >= 0 ? "#10b981" : "hsl(var(--destructive))" },
+      { label: "Momentum (RSI bands)", value: overview.momentumScore ?? 0, max: 20, color: (overview.momentumScore ?? 0) >= 0 ? "#10b981" : "hsl(var(--destructive))" },
+      { label: "MACD Crossover", value: overview.macdScore ?? 0, max: 15, color: (overview.macdScore ?? 0) >= 0 ? "#10b981" : "hsl(var(--destructive))" },
+      { label: "Volume Surge", value: overview.volScore ?? 0, max: 10, color: "#f59e0b" },
       { label: "News Sentiment", value: overview.sentimentContrib ?? 0, max: 40, color: (overview.sentimentContrib ?? 0) >= 0 ? "#10b981" : "hsl(var(--destructive))" },
-      { label: "Volume Activity", value: overview.volScore ?? 0, max: 10, color: "#f59e0b" },
     ];
   }, [overview]);
+
+  const signalReasons = useMemo(() => buildSignalReasons(overview ?? null), [overview]);
 
   if (!activeTicker) return <div className="p-8 text-center text-muted-foreground">Select a ticker to begin analysis.</div>;
 
@@ -258,15 +378,48 @@ export default function Terminal() {
                 ))}
                 <div className="pt-2 border-t border-border flex justify-between text-xs">
                   <span className="text-muted-foreground uppercase tracking-widest">Total Score</span>
-                  <span className={`font-mono font-bold ${overview.quantScore > 15 ? 'text-green-500' : overview.quantScore < -10 ? 'text-destructive' : 'text-foreground'}`}>
+                  <span className={`font-mono font-bold ${overview.quantScore > 20 ? 'text-green-500' : overview.quantScore < -15 ? 'text-destructive' : 'text-foreground'}`}>
                     {overview.quantScore >= 0 ? "+" : ""}{overview.quantScore.toFixed(1)}
                   </span>
                 </div>
                 <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground pt-1">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-green-500 inline-block" /> &gt;15 = BUY</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-foreground/30 inline-block" /> -10–15 = HOLD</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-destructive inline-block" /> &lt;-10 = AVOID</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-green-500 inline-block" /> &gt;20 = BUY</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-foreground/30 inline-block" /> -15–20 = HOLD</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-destructive inline-block" /> &lt;-15 = AVOID</span>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Pro Mode: Signal Reasoning */}
+          {isPro && overview && signalReasons.length > 0 && (
+            <Card className="bg-card rounded-none border-primary/30">
+              <CardHeader className="pb-2 bg-primary/5">
+                <CardTitle className="text-sm font-medium text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Zap className="h-4 w-4" /> Why This Signal?
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {signalReasons.map((item, i) => (
+                  <div key={i} className="flex gap-3 px-4 py-3 border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
+                    <div className="shrink-0 mt-0.5">
+                      {item.icon === "good"    && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                      {item.icon === "bad"     && <XCircle      className="h-4 w-4 text-destructive" />}
+                      {item.icon === "neutral" && <AlertCircle  className="h-4 w-4 text-amber-500" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-0.5">
+                        <span className={`text-xs font-semibold ${item.icon === "good" ? "text-green-400" : item.icon === "bad" ? "text-destructive" : "text-amber-400"}`}>
+                          {item.label}
+                        </span>
+                        <span className={`text-xs font-mono shrink-0 ${item.score > 0 ? "text-green-500" : item.score < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                          {item.score > 0 ? "+" : ""}{item.score}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{item.detail}</p>
+                    </div>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           )}

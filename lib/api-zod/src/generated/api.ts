@@ -46,8 +46,13 @@ export const GetStockOverviewResponse = zod.object({
   "maxDrawdown": zod.number().nullish(),
   "trendScore": zod.number().nullish(),
   "momentumScore": zod.number().nullish(),
+  "macdScore": zod.number().nullish(),
   "sentimentContrib": zod.number().nullish(),
-  "volScore": zod.number().nullish()
+  "volScore": zod.number().nullish(),
+  "volRatio": zod.number().nullish(),
+  "aboveMa50": zod.boolean().nullish(),
+  "aboveMa200": zod.boolean().nullish(),
+  "goldenCross": zod.boolean().nullish()
 })
 
 

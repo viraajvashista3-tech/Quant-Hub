@@ -179,12 +179,48 @@ def cmd_overview(ticker):
 
     sent_score, _ = fetch_sentiment(ticker)
 
-    trend_score = 20.0 if (ma200 and latest_close > ma200) else -20.0
-    momentum_score = 20.0 if 40 < latest_rsi < 70 else (-10.0 if latest_rsi >= 70 else -20.0)
-    vol_score = 10.0 if latest_vol > avg_vol * 0.5 else 0.0
-    quant_score = (sent_score * 40) + trend_score + momentum_score + vol_score
+    # ── Quant Score (5-component) ────────────────────────────────────────────
+    # 1. Trend (MA position): -30 to +30
+    #    Price vs MA200 (+15/-15), Price vs MA50 (+10/-10), Golden/Death cross (+5/-5)
+    above_ma200 = bool(ma200 and latest_close > ma200)
+    above_ma50  = bool(ma50  and latest_close > ma50)
+    golden_cross = bool(ma50 and ma200 and ma50 > ma200)
 
-    signal = "BUY" if quant_score > 15 else "HOLD" if quant_score > -10 else "AVOID"
+    trend_score = (
+        (15.0 if above_ma200 else -15.0 if ma200 else 0.0) +
+        (10.0 if above_ma50  else -10.0 if ma50  else 0.0) +
+        (5.0  if golden_cross else -5.0  if (ma50 and ma200) else 0.0)
+    )
+
+    # 2. Momentum (RSI bands): -20 to +20
+    if latest_rsi >= 70:
+        momentum_score = -10.0   # overbought — pullback risk
+    elif latest_rsi >= 60:
+        momentum_score = 20.0    # strong bullish momentum
+    elif latest_rsi >= 50:
+        momentum_score = 10.0    # mild bullish
+    elif latest_rsi >= 40:
+        momentum_score = -5.0    # neutral / mildly bearish
+    elif latest_rsi >= 30:
+        momentum_score = -15.0   # weak / bearish
+    else:
+        momentum_score = -20.0   # oversold / deeply bearish
+
+    # 3. MACD crossover: -15 to +15
+    macd_score = 15.0 if latest_macd > latest_signal else -15.0
+
+    # 4. Volume: 0 to +10  (uses 20-day avg for less noise)
+    avg_vol_20 = int(vol.tail(20).mean()) if len(vol) >= 20 else avg_vol
+    vol_ratio = latest_vol / avg_vol_20 if avg_vol_20 > 0 else 1.0
+    vol_score = 10.0 if vol_ratio >= 1.5 else 5.0 if vol_ratio >= 1.0 else 0.0
+
+    # 5. News sentiment: -40 to +40
+    sentiment_contrib = round(sent_score * 40, 2)
+
+    quant_score = trend_score + momentum_score + macd_score + vol_score + sentiment_contrib
+
+    # Thresholds calibrated for 5-component range (~-100 to +115)
+    signal = "BUY" if quant_score > 20 else "HOLD" if quant_score > -15 else "AVOID"
 
     result = {
         "ticker": ticker.upper(),
@@ -209,8 +245,13 @@ def cmd_overview(ticker):
         "maxDrawdown": round(max_drawdown, 2),
         "trendScore": round(trend_score, 2),
         "momentumScore": round(momentum_score, 2),
-        "sentimentContrib": round(sent_score * 40, 2),
+        "macdScore": round(macd_score, 2),
+        "sentimentContrib": round(sentiment_contrib, 2),
         "volScore": round(vol_score, 2),
+        "volRatio": round(vol_ratio, 3),
+        "aboveMa50": above_ma50,
+        "aboveMa200": above_ma200,
+        "goldenCross": golden_cross,
     }
     print(json.dumps(result))
 

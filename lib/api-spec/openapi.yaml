@@ -297,10 +297,20 @@ components:
           type: ["number", "null"]
         momentumScore:
           type: ["number", "null"]
+        macdScore:
+          type: ["number", "null"]
         sentimentContrib:
           type: ["number", "null"]
         volScore:
           type: ["number", "null"]
+        volRatio:
+          type: ["number", "null"]
+        aboveMa50:
+          type: ["boolean", "null"]
+        aboveMa200:
+          type: ["boolean", "null"]
+        goldenCross:
+          type: ["boolean", "null"]
 
     PriceBar:
       type: object

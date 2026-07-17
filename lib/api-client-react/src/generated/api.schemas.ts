@@ -53,9 +53,19 @@ export interface StockOverview {
   /** @nullable */
   momentumScore?: number | null;
   /** @nullable */
+  macdScore?: number | null;
+  /** @nullable */
   sentimentContrib?: number | null;
   /** @nullable */
   volScore?: number | null;
+  /** @nullable */
+  volRatio?: number | null;
+  /** @nullable */
+  aboveMa50?: boolean | null;
+  /** @nullable */
+  aboveMa200?: boolean | null;
+  /** @nullable */
+  goldenCross?: boolean | null;
 }
 
 export interface PriceBar {
