@@ -1,0 +1,92 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="QuantHub.Desktop.Views.Pages.AiResearchView"
+             x:Name="Root">
+  <UserControl.Styles>
+    <Style Selector="Border.chatBubble">
+      <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="HorizontalAlignment" Value="Left"/>
+    </Style>
+    <Style Selector="Border.chatBubble.user">
+      <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="HorizontalAlignment" Value="Right"/>
+    </Style>
+    <Style Selector="TextBlock.chatText">
+      <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+    </Style>
+    <Style Selector="TextBlock.chatText.user">
+      <Setter Property="Foreground" Value="White"/>
+    </Style>
+  </UserControl.Styles>
+
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <!-- API key missing state -->
+    <Border Grid.Row="0" Classes="card" VerticalAlignment="Top"
+            IsVisible="{Binding HasApiKey, Converter={StaticResource InverseBoolToVis}}">
+      <StackPanel>
+        <TextBlock Text="Claude API key required" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource MutedTextBrush}"
+                   Text="Add your Claude API key on the Settings page (bottom-left) to start chatting with the AI Research assistant."/>
+      </StackPanel>
+    </Border>
+
+    <Grid Grid.Row="0" IsVisible="{Binding HasApiKey}">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="*"/>
+      </Grid.RowDefinitions>
+
+      <!-- Empty state: suggested questions -->
+      <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="560"
+                  IsVisible="{Binding HasMessages, Converter={StaticResource InverseBoolToVis}}">
+        <TextBlock Text="🤖" FontSize="40" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+        <TextBlock Text="Ask about the active ticker" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+        <ItemsControl ItemsSource="{Binding SuggestedQuestions}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Button Content="{Binding}" Margin="0,0,0,8" Padding="14,10" HorizontalContentAlignment="Left"
+                      Command="{Binding DataContext.AskSuggestedCommand, ElementName=Root}"
+                      CommandParameter="{Binding}"/>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+
+      <ScrollViewer x:Name="ChatScrollViewer" VerticalScrollBarVisibility="Auto"
+                    IsVisible="{Binding HasMessages}">
+        <ItemsControl ItemsSource="{Binding Messages}" Margin="0,0,0,8">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Border Classes="chatBubble" Classes.user="{Binding IsUser}" Padding="14,10" Margin="0,0,0,12" MaxWidth="640">
+                <TextBlock Classes="chatText" Classes.user="{Binding IsUser}" Text="{Binding Text}" TextWrapping="Wrap"/>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Grid>
+
+    <StackPanel Grid.Row="1" Margin="0,16,0,0" IsVisible="{Binding HasApiKey}">
+      <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DestructiveBrush}"
+                 IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmptyToVis}}"
+                 Margin="0,0,0,8" TextWrapping="Wrap"/>
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <TextBox x:Name="MessageInput" Grid.Column="0" Text="{Binding UserInput}"
+                 Padding="12,10" VerticalContentAlignment="Center"
+                 ToolTip.Tip="Ask a question about the active ticker"/>
+        <Button Grid.Column="1" Content="Send" Classes="primary" Margin="8,0,0,0" Command="{Binding SendCommand}"/>
+      </Grid>
+    </StackPanel>
+  </Grid>
+</UserControl>

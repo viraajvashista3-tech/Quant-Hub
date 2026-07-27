@@ -1,0 +1,207 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             x:Class="QuantHub.Desktop.Views.Pages.PeersView">
+  <UserControl.Styles>
+    <Style Selector="Border.peerRow">
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector="Border.peerRow.highlighted">
+      <Setter Property="Background" Value="{DynamicResource PanelBorderBrush}"/>
+    </Style>
+  </UserControl.Styles>
+
+  <StackPanel>
+
+    <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DestructiveBrush}"
+               IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmptyToVis}}"
+               Margin="0,0,0,16" TextWrapping="Wrap"/>
+
+    <StackPanel IsVisible="{Binding Data, Converter={StaticResource NotEmptyToVis}}">
+
+      <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+        <TextBlock Text="{Binding Data.Ticker}" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}"/>
+        <TextBlock Text="{Binding Data.Sector}" FontSize="14" Foreground="{DynamicResource MutedTextBrush}"
+                   VerticalAlignment="Bottom" Margin="12,0,0,0"/>
+      </StackPanel>
+
+      <Border Classes="card" IsVisible="{Binding Rows, Converter={StaticResource NotEmptyToVis}}">
+        <StackPanel>
+          <TextBlock Text="P/E COMPARISON" Classes="cardTitle"/>
+          <lvc:CartesianChart Series="{Binding ComparisonSeries}" XAxes="{Binding ComparisonXAxes}" YAxes="{Binding ComparisonYAxes}"
+                               Background="Transparent" Height="220"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Beginner: three-column table, no jargon-heavy metrics -->
+      <Border Classes="card" IsVisible="{Binding IsBeginner}">
+        <StackPanel>
+          <TextBlock Text="How it stacks up" Classes="friendlyCardTitle"/>
+          <Grid Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="180"/>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="120"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="COMPANY" Classes="sectionLabel"/>
+            <TextBlock Grid.Column="1" Text="PRICE" Classes="sectionLabel"/>
+            <TextBlock Grid.Column="2" Text="P/E RATIO" Classes="sectionLabel"/>
+          </Grid>
+          <ItemsControl ItemsSource="{Binding Rows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Classes="peerRow" Classes.highlighted="{Binding IsSubject}" Padding="0,8" Margin="0,0,0,2">
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="180"/>
+                      <ColumnDefinition Width="*"/>
+                      <ColumnDefinition Width="120"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                      <TextBlock Text="{Binding Stock.Ticker}" FontFamily="{StaticResource MonoFontFamily}" FontWeight="Bold"/>
+                      <TextBlock Text="{Binding Stock.Name}" FontSize="10" Foreground="{DynamicResource MutedTextBrush}" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{Binding Stock.Price, StringFormat={}{0:0.00}}" FontFamily="{StaticResource MonoFontFamily}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding Stock.Pe, StringFormat={}{0:0.0}x}" FontFamily="{StaticResource MonoFontFamily}" VerticalAlignment="Center"/>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <!-- Intermediate + Pro: full metrics table -->
+      <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+        <StackPanel>
+          <TextBlock Text="PEER COMPARISON" Classes="cardTitle"/>
+          <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+            <StackPanel>
+              <Grid Margin="0,0,0,10" MinWidth="920">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="140"/>
+                  <ColumnDefinition Width="90"/>
+                  <ColumnDefinition Width="80"/>
+                  <ColumnDefinition Width="80"/>
+                  <ColumnDefinition Width="90"/>
+                  <ColumnDefinition Width="70"/>
+                  <ColumnDefinition Width="120"/>
+                  <ColumnDefinition Width="90"/>
+                  <ColumnDefinition Width="80"/>
+                  <ColumnDefinition Width="90"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="TICKER" Classes="sectionLabel"/>
+                <TextBlock Grid.Column="1" Text="PRICE" Classes="sectionLabel"/>
+                <TextBlock Grid.Column="2" Text="P/E" Classes="sectionLabel"/>
+                <TextBlock Grid.Column="3" Text="FWD P/E" Classes="sectionLabel"/>
+                <TextBlock Grid.Column="4" Text="DIV YIELD" Classes="sectionLabel"/>
+                <TextBlock Grid.Column="5" Text="BETA" Classes="sectionLabel"/>
+                <TextBlock Grid.Column="6" Text="MARKET CAP" Classes="sectionLabel"/>
+                <TextBlock Grid.Column="7" Text="MARGIN" Classes="sectionLabel"/>
+                <TextBlock Grid.Column="8" Text="D/E" Classes="sectionLabel"/>
+                <TextBlock Grid.Column="9" Text="ROE" Classes="sectionLabel"/>
+              </Grid>
+              <ItemsControl ItemsSource="{Binding Rows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border Classes="peerRow" Classes.highlighted="{Binding IsSubject}" MinWidth="920" Padding="0,8" Margin="0,0,0,2">
+                      <Grid>
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="140"/>
+                          <ColumnDefinition Width="90"/>
+                          <ColumnDefinition Width="80"/>
+                          <ColumnDefinition Width="80"/>
+                          <ColumnDefinition Width="90"/>
+                          <ColumnDefinition Width="70"/>
+                          <ColumnDefinition Width="120"/>
+                          <ColumnDefinition Width="90"/>
+                          <ColumnDefinition Width="80"/>
+                          <ColumnDefinition Width="90"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                          <TextBlock Text="{Binding Stock.Ticker}" FontFamily="{StaticResource MonoFontFamily}" FontWeight="Bold"/>
+                          <TextBlock Text="{Binding Stock.Name}" FontSize="10" Foreground="{DynamicResource MutedTextBrush}" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="{Binding Stock.Price, StringFormat={}{0:0.00}}" FontFamily="{StaticResource MonoFontFamily}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Text="{Binding Stock.Pe, StringFormat={}{0:0.0}}" FontFamily="{StaticResource MonoFontFamily}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="3" Text="{Binding Stock.ForwardPe, StringFormat={}{0:0.0}}" FontFamily="{StaticResource MonoFontFamily}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="4" Text="{Binding Stock.DividendYield, StringFormat=P2}" FontFamily="{StaticResource MonoFontFamily}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="5" Text="{Binding Stock.Beta, StringFormat={}{0:0.00}}" FontFamily="{StaticResource MonoFontFamily}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="6" Text="{Binding Stock.MarketCap, StringFormat=N0}" FontFamily="{StaticResource MonoFontFamily}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="7" Text="{Binding Stock.ProfitMargins, StringFormat=P1}" FontFamily="{StaticResource MonoFontFamily}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="8" Text="{Binding Stock.DebtToEquity, StringFormat={}{0:0.0}}" FontFamily="{StaticResource MonoFontFamily}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="9" Text="{Binding Stock.ReturnOnEquity, StringFormat=P1}" FontFamily="{StaticResource MonoFontFamily}" VerticalAlignment="Center"/>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </ScrollViewer>
+        </StackPanel>
+      </Border>
+
+      <!-- Pro only: return correlation heatmap -->
+      <Border Classes="card pro" IsVisible="{Binding IsPro}">
+        <StackPanel>
+          <TextBlock Text="RETURN CORRELATION" Classes="cardTitle"/>
+          <TextBlock Text="Pearson correlation of daily returns over the trailing year - closer to 1 means the stocks tend to move together, closer to -1 means they move opposite each other."
+                     TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,12"/>
+          <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                        IsVisible="{Binding CorrelationRows, Converter={StaticResource NotEmptyToVis}}">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal">
+                <Border Width="60" Height="30"/>
+                <ItemsControl ItemsSource="{Binding CorrelationHeaderTickers}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Width="64" Height="30" Margin="1,0">
+                        <TextBlock Text="{Binding}" FontFamily="{StaticResource MonoFontFamily}" FontSize="11" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+              <ItemsControl ItemsSource="{Binding CorrelationRows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Margin="0,1">
+                      <Border Width="60" Height="36">
+                        <TextBlock Text="{Binding Ticker}" FontFamily="{StaticResource MonoFontFamily}" FontWeight="Bold" FontSize="12"
+                                   VerticalAlignment="Center"/>
+                      </Border>
+                      <ItemsControl ItemsSource="{Binding Cells}">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Border Width="64" Height="36" Margin="1,0" Background="{Binding Background}">
+                              <TextBlock Text="{Binding Display}" FontFamily="{StaticResource MonoFontFamily}" FontSize="11" Foreground="White"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </ScrollViewer>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" IsVisible="{Binding Data.Summary, Converter={StaticResource NotEmptyToVis}}">
+        <StackPanel>
+          <TextBlock Text="BOTTOM LINE" Classes="cardTitle"/>
+          <TextBlock Text="{Binding Data.Summary}" TextWrapping="Wrap"/>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </StackPanel>
+</UserControl>

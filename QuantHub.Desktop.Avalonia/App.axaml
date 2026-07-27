@@ -57,6 +57,15 @@
     <DataTemplate DataType="{x:Type vmp:InsiderViewModel}">
       <viewsp:InsiderView/>
     </DataTemplate>
+    <DataTemplate DataType="{x:Type vmp:PeersViewModel}">
+      <viewsp:PeersView/>
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmp:AiResearchViewModel}">
+      <viewsp:AiResearchView/>
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmp:TerminalViewModel}">
+      <viewsp:TerminalView/>
+    </DataTemplate>
   </Application.DataTemplates>
 
 </Application>

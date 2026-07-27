@@ -1,0 +1,295 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             xmlns:controls="using:QuantHub.Desktop.Views.Controls"
+             x:Class="QuantHub.Desktop.Views.Pages.TerminalView"
+             x:Name="Root">
+  <UserControl.Styles>
+    <Style Selector="Button.link">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.link /template/ ContentPresenter">
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    </Style>
+    <Style Selector="Button.link:pointerover TextBlock">
+      <Setter Property="TextDecorations" Value="Underline"/>
+    </Style>
+  </UserControl.Styles>
+
+  <StackPanel>
+
+    <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DestructiveBrush}"
+               IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmptyToVis}}"
+               Margin="0,0,0,16" TextWrapping="Wrap"/>
+
+    <!-- Header - always shown across all three tiers; this is identity info, not "advanced" -->
+    <Grid Margin="0,0,0,16">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="Auto"/>
+      </Grid.ColumnDefinitions>
+      <StackPanel Grid.Column="0">
+        <TextBlock Text="{Binding Overview.Ticker}" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}"/>
+        <TextBlock Text="{Binding Overview.Name}" FontSize="14" Foreground="{DynamicResource MutedTextBrush}"/>
+      </StackPanel>
+      <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+          <TextBlock Text="{Binding Overview.Price, StringFormat={}{0:0.00}}" FontSize="22" FontFamily="{StaticResource MonoFontFamily}" FontWeight="Bold"/>
+          <TextBlock Text="{Binding Overview.ChangePercent, StringFormat=' {0:+0.00;-0.00}%'}" FontSize="16" FontFamily="{StaticResource MonoFontFamily}"
+                     Margin="8,0,0,0" VerticalAlignment="Center"/>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0">
+          <TextBlock Text="{Binding Overview.QuantScore, StringFormat={}{0:0.0}}" FontSize="22" FontWeight="Bold" FontFamily="{StaticResource MonoFontFamily}" Margin="0,0,10,0"
+                     IsVisible="{Binding IsIntermediatePlus}"/>
+          <Border Classes="statusBadge" Background="{Binding Overview.Signal, Converter={StaticResource SignalToBrush}}" Padding="12,5">
+            <TextBlock Text="{Binding Overview.Signal}" Foreground="White" FontWeight="Bold"/>
+          </Border>
+        </StackPanel>
+      </StackPanel>
+    </Grid>
+
+    <Border Classes="card" BorderBrush="{DynamicResource WarningBrush}"
+            IsVisible="{Binding HasLimitedData}">
+      <TextBlock Foreground="{DynamicResource WarningBrush}" TextWrapping="Wrap"
+                 Text="Limited price history available - MA50/MA200-based signals may be unreliable for this ticker."/>
+    </Border>
+
+    <!-- Beginner-only plain-English framing banner - supplements the header, never replaces the chart -->
+    <Border Classes="card" IsVisible="{Binding IsBeginner}">
+      <StackPanel Orientation="Horizontal">
+        <TextBlock Text="{Binding HeroEmoji}" FontSize="32" VerticalAlignment="Center" Margin="0,0,16,0"/>
+        <TextBlock Text="{Binding HeroSentence}" FontSize="15" TextWrapping="Wrap" VerticalAlignment="Center"/>
+      </StackPanel>
+    </Border>
+
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="16"/>
+        <ColumnDefinition Width="360"/>
+      </Grid.ColumnDefinitions>
+
+      <StackPanel Grid.Column="0" MinWidth="0">
+        <Border Classes="card">
+          <StackPanel>
+            <Grid Margin="0,0,0,16">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="PRICE HISTORY &amp; MA" Classes="cardTitle" Margin="0" VerticalAlignment="Center"/>
+              <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <ToggleButton Content="BB" Padding="10,5" Margin="0,0,8,0" Cursor="Hand"
+                              IsChecked="{Binding ShowBollingerBands}"
+                              IsVisible="{Binding IsPro}"
+                              Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource TextBrush}"
+                              BorderBrush="{DynamicResource PanelBorderBrush}"/>
+                <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}"
+                        BorderThickness="1" CornerRadius="10" Padding="3">
+                  <ItemsControl ItemsSource="{Binding Periods}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Button Content="{Binding Label}" Padding="12,6" Margin="2,0" MinWidth="42"
+                                FontSize="12" FontWeight="SemiBold" BorderThickness="0"
+                                HorizontalContentAlignment="Center"
+                                Command="{Binding DataContext.SelectPeriodCommand, ElementName=Root}"
+                                CommandParameter="{Binding}">
+                          <Button.Background>
+                            <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="PrimaryBrush|SurfaceBrush">
+                              <Binding Path="."/>
+                              <Binding Path="DataContext.SelectedPeriod" ElementName="Root"/>
+                            </MultiBinding>
+                          </Button.Background>
+                          <Button.Foreground>
+                            <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="White|TextBrush">
+                              <Binding Path="."/>
+                              <Binding Path="DataContext.SelectedPeriod" ElementName="Root"/>
+                            </MultiBinding>
+                          </Button.Foreground>
+                        </Button>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </Border>
+                <Button Content="⟳" Margin="8,0,0,0" Padding="10,5" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh"/>
+              </StackPanel>
+            </Grid>
+
+            <lvc:CartesianChart Series="{Binding PriceSeries}" XAxes="{Binding PriceXAxes}" YAxes="{Binding PriceYAxes}"
+                                 Background="Transparent" Height="280"/>
+            <lvc:CartesianChart Series="{Binding RsiSeries}" XAxes="{Binding RsiXAxes}" YAxes="{Binding RsiYAxes}"
+                                 Background="Transparent" Height="140" Margin="0,4,0,0"
+                                 IsVisible="{Binding IsIntermediatePlus}"/>
+
+            <ItemsControl ItemsSource="{Binding Legend}" Margin="0,12,0,0">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                    <Border Width="16" Height="2" Margin="0,0,6,0" VerticalAlignment="Center" CornerRadius="1">
+                      <Border.Background>
+                        <SolidColorBrush Color="{Binding Color}"/>
+                      </Border.Background>
+                    </Border>
+                    <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+      <StackPanel Grid.Column="2">
+
+        <!-- Beginner: plain-English "why" reasons, in place of the technical breakdown -->
+        <Border Classes="card" IsVisible="{Binding IsBeginner}">
+          <StackPanel>
+            <TextBlock Text="Why does it say that?" Classes="friendlyCardTitle"/>
+            <ItemsControl ItemsSource="{Binding Reasons}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="{Binding Verdict, Converter={StaticResource VerdictToIcon}}" FontSize="16" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding SimpleDetail}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <!-- Intermediate + Pro: numeric key metrics (Sharpe/Max Drawdown are Pro-only within this card) -->
+        <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+          <StackPanel>
+            <TextBlock Text="KEY METRICS" Classes="cardTitle"/>
+            <controls:MetricRow Label="RSI (14)" Value="{Binding Overview.Rsi, StringFormat={}{0:0.00}}"/>
+            <controls:MetricRow Label="MACD / Signal" Value="{Binding Overview.Macd, StringFormat={}{0:0.0000}}"/>
+            <controls:MetricRow Label="Volume" Value="{Binding Overview.Volume, StringFormat=N0}"/>
+            <controls:MetricRow Label="Avg Volume" Value="{Binding Overview.AvgVolume, StringFormat=N0}"/>
+            <controls:MetricRow Label="Beta" Value="{Binding Overview.Beta, StringFormat={}{0:0.00}}"/>
+            <controls:MetricRow Label="Ann. Volatility" Value="{Binding Overview.AnnualizedVolatility, StringFormat={}{0:0.0}%}"/>
+            <StackPanel IsVisible="{Binding IsPro}">
+              <controls:MetricRow Label="Sharpe Ratio" Value="{Binding Overview.SharpeRatio, StringFormat={}{0:0.000}}"/>
+              <controls:MetricRow Label="Max Drawdown" Value="{Binding Overview.MaxDrawdown, StringFormat={}{0:0.0}%}"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- Beginner: casual news framing, no sentiment jargon -->
+        <Border Classes="card" IsVisible="{Binding IsBeginner}">
+          <StackPanel>
+            <TextBlock Text="What people are saying" Classes="friendlyCardTitle"/>
+            <ItemsControl ItemsSource="{Binding Headlines}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <StackPanel Margin="0,0,0,8">
+                    <Button Classes="link" Command="{Binding DataContext.OpenLinkCommand, ElementName=Root}" CommandParameter="{Binding Url}">
+                      <TextBlock Text="{Binding Title}" TextWrapping="Wrap" HorizontalAlignment="Stretch" Foreground="{DynamicResource PrimaryBrush}"/>
+                    </Button>
+                    <TextBlock Text="{Binding PublishedAt}" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <!-- Intermediate + Pro: technical news framing with sentiment badge -->
+        <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+          <StackPanel>
+            <Grid Margin="0,0,0,16">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="RECENT NEWS" Classes="cardTitle" Margin="0"/>
+              <Border Grid.Column="1" Classes="chip"
+                      Background="{Binding NewsSentimentLabel, Converter={StaticResource NewsSentimentToBrush}}"
+                      IsVisible="{Binding NewsSentimentLabel, Converter={StaticResource NotEmptyToVis}}">
+                <TextBlock Text="{Binding NewsSentimentLabel}" Classes="chipText"/>
+              </Border>
+            </Grid>
+            <ItemsControl ItemsSource="{Binding Headlines}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Grid Margin="0,0,0,12" ColumnDefinitions="Auto,*">
+                    <Ellipse Grid.Column="0" Width="7" Height="7" Margin="2,6,10,0" VerticalAlignment="Top"
+                             Fill="{Binding Sentiment, Converter={StaticResource SignToBrush}}"/>
+                    <StackPanel Grid.Column="1">
+                      <Button Classes="link" Command="{Binding DataContext.OpenLinkCommand, ElementName=Root}" CommandParameter="{Binding Url}">
+                        <TextBlock Text="{Binding Title}" TextWrapping="Wrap" HorizontalAlignment="Stretch" FontSize="13" Foreground="{DynamicResource PrimaryBrush}"/>
+                      </Button>
+                      <TextBlock Text="{Binding PublishedAt}" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" Margin="0,3,0,0"/>
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <!-- Pro only: full quantitative breakdown and technical reasoning -->
+        <Border Classes="card pro" IsVisible="{Binding IsPro}">
+          <StackPanel>
+            <TextBlock Text="QUANT SCORE BREAKDOWN" Classes="cardTitle"/>
+            <ItemsControl ItemsSource="{Binding ScoreBreakdown}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <StackPanel Margin="0,0,0,8">
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                      </Grid.ColumnDefinitions>
+                      <TextBlock Grid.Column="0" Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource MutedTextBrush}"/>
+                      <TextBlock Grid.Column="1" Text="{Binding Value, StringFormat={}{0:+0.0;-0.0}}" FontFamily="{StaticResource MonoFontFamily}"
+                                 Foreground="{Binding Value, Converter={StaticResource SignToBrush}}"/>
+                    </Grid>
+                    <ProgressBar Minimum="0" Maximum="{Binding MaxAbs}" Value="{Binding AbsValue, Mode=OneWay}"
+                                 Foreground="{Binding Value, Converter={StaticResource SignToBrush}}"
+                                 Height="6" Margin="0,3,0,0"/>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card pro" IsVisible="{Binding IsPro}">
+          <StackPanel>
+            <TextBlock Text="WHY THIS SIGNAL?" Classes="cardTitle"/>
+            <ItemsControl ItemsSource="{Binding Reasons}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="{Binding Verdict, Converter={StaticResource VerdictToIcon}}" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Top"/>
+                    <StackPanel>
+                      <TextBlock Text="{Binding ProLabel}" FontWeight="SemiBold"/>
+                      <TextBlock Text="{Binding ProDetail}" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}"/>
+                    </StackPanel>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </Grid>
+  </StackPanel>
+</UserControl>
