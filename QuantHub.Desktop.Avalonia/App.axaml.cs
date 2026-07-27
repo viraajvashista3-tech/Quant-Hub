@@ -1,7 +1,10 @@
+using System.IO;
 using System.Net.Http;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media.Imaging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using QuantHub.Core.Ai;
@@ -57,12 +60,27 @@ public partial class App : Application
             _host.Start();
             _host.Services.GetRequiredService<SettingsService>().ApplyTheme();
 
-            desktop.MainWindow = _host.Services.GetRequiredService<ShellWindow>();
+            var window = _host.Services.GetRequiredService<ShellWindow>();
+            desktop.MainWindow = window;
             desktop.Exit += (_, _) =>
             {
                 _host.StopAsync().GetAwaiter().GetResult();
                 _host.Dispose();
             };
+
+#if DEBUG
+            // Dev-only screenshot hook (F12): dumps a ground-truth RenderTargetBitmap render to
+            // disk - PrintWindow/CopyFromScreen can both misrender Avalonia's Skia surface, so this
+            // is the reliable way to verify layout during migration. Strip before shipping.
+            window.KeyDown += (_, e) =>
+            {
+                if (e.Key != Key.F12) return;
+                var size = new PixelSize((int)window.Bounds.Width, (int)window.Bounds.Height);
+                using var bmp = new RenderTargetBitmap(size);
+                bmp.Render(window);
+                bmp.Save(Path.Combine(Path.GetTempPath(), "quantterminal_screenshot.png"));
+            };
+#endif
         }
 
         base.OnFrameworkInitializationCompleted();

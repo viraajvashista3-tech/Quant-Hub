@@ -8,9 +8,12 @@ namespace QuantHub.Desktop.Views;
 
 public partial class ShellWindow : Window
 {
+    private readonly ScrollViewer _contentScrollViewer;
+
     public ShellWindow(ShellViewModel viewModel)
     {
         AvaloniaXamlLoader.Load(this);
+        _contentScrollViewer = this.FindControl<ScrollViewer>("ContentScrollViewer")!;
         DataContext = viewModel;
 
         // Swapping ContentControl.Content leaves the ScrollViewer at its previous scroll offset,
@@ -23,7 +26,7 @@ public partial class ShellWindow : Window
     {
         if (e.PropertyName == nameof(ShellViewModel.CurrentPage))
         {
-            ContentScrollViewer.Offset = new Vector(0, 0);
+            _contentScrollViewer.Offset = new Vector(0, 0);
         }
     }
 }

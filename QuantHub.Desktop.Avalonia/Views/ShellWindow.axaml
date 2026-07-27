@@ -94,8 +94,8 @@
                    Foreground="{DynamicResource PrimaryBrush}"/>
       </Border>
 
-      <ScrollViewer x:Name="ContentScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto">
-        <ContentControl Content="{Binding CurrentPage}" Margin="24"/>
+      <ScrollViewer x:Name="ContentScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <ContentControl Content="{Binding CurrentPage}" Margin="24" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"/>
       </ScrollViewer>
     </Grid>
   </Grid>

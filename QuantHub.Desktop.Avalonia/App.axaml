@@ -27,6 +27,7 @@
       <conv:SignToBrushConverter x:Key="SignToBrush"/>
       <conv:TransactionTypeToBrushConverter x:Key="TransactionTypeToBrush"/>
       <conv:IsEqualConverter x:Key="IsEqual"/>
+      <conv:EqualsToBrushConverter x:Key="EqualsToBrush"/>
     </ResourceDictionary>
   </Application.Resources>
 
@@ -37,6 +38,15 @@
   <Application.DataTemplates>
     <DataTemplate DataType="{x:Type vmp:UniverseViewModel}">
       <viewsp:UniverseView/>
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmp:ComingSoonViewModel}">
+      <viewsp:ComingSoonView/>
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmp:SettingsViewModel}">
+      <viewsp:SettingsView/>
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmp:FundamentalsViewModel}">
+      <viewsp:FundamentalsView/>
     </DataTemplate>
   </Application.DataTemplates>
 

@@ -1,0 +1,144 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:QuantHub.Desktop.Views.Controls"
+             x:Class="QuantHub.Desktop.Views.Pages.FundamentalsView">
+  <StackPanel>
+
+    <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DestructiveBrush}"
+               IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmptyToVis}}"
+               Margin="0,0,0,16" TextWrapping="Wrap"/>
+
+    <StackPanel IsVisible="{Binding Data, Converter={StaticResource NotEmptyToVis}}">
+
+      <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+        <TextBlock Text="{Binding Data.Name}" FontSize="22" FontWeight="Bold"/>
+        <TextBlock Text="{Binding Data.Sector}" Foreground="{DynamicResource MutedTextBrush}" Margin="12,0,0,0" VerticalAlignment="Bottom"/>
+        <TextBlock Text="{Binding Data.Industry}" Foreground="{DynamicResource MutedTextBrush}" Margin="8,0,0,0" VerticalAlignment="Bottom"/>
+      </StackPanel>
+
+      <Border Classes="card">
+        <TextBlock Text="{Binding Data.Description}" TextWrapping="Wrap"/>
+      </Border>
+
+      <!-- Beginner: plain-English valuation/dividend/debt read, no numeric grids -->
+      <Border Classes="card" IsVisible="{Binding IsBeginner}">
+        <StackPanel>
+          <TextBlock Text="Is this stock cheap or expensive?" Classes="friendlyCardTitle"/>
+          <TextBlock Text="{Binding BeginnerSummary}" TextWrapping="Wrap" FontSize="15"/>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card pro" IsVisible="{Binding IsPro}">
+        <StackPanel Orientation="Horizontal">
+          <StackPanel Margin="0,0,24,0">
+            <TextBlock Text="Total Revenue" Classes="sectionLabel"/>
+            <TextBlock Text="{Binding Data.TotalRevenue, StringFormat=N0}" FontFamily="{StaticResource MonoFontFamily}" FontSize="16"/>
+          </StackPanel>
+          <StackPanel Margin="0,0,24,0">
+            <TextBlock Text="Free Cash Flow" Classes="sectionLabel"/>
+            <TextBlock Text="{Binding Data.FreeCashflow, StringFormat=N0}" FontFamily="{StaticResource MonoFontFamily}" FontSize="16"
+                       Foreground="{Binding Data.FreeCashflow, Converter={StaticResource SignToBrush}}"/>
+          </StackPanel>
+          <StackPanel Margin="0,0,24,0">
+            <TextBlock Text="Total Debt" Classes="sectionLabel"/>
+            <TextBlock Text="{Binding Data.TotalDebt, StringFormat=N0}" FontFamily="{StaticResource MonoFontFamily}" FontSize="16"
+                       Foreground="{DynamicResource DestructiveBrush}"/>
+          </StackPanel>
+          <StackPanel>
+            <TextBlock Text="Cash &amp; Equivalents" Classes="sectionLabel"/>
+            <TextBlock Text="{Binding Data.TotalCash, StringFormat=N0}" FontFamily="{StaticResource MonoFontFamily}" FontSize="16"
+                       Foreground="{DynamicResource PositiveBrush}"/>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <UniformGrid Columns="3" Rows="1" IsVisible="{Binding IsIntermediatePlus}">
+        <Border Classes="card" Margin="0,0,8,16">
+          <StackPanel>
+            <TextBlock Text="VALUATION" Classes="cardTitle"/>
+            <controls:MetricRow Label="Market Cap" Value="{Binding Data.MarketCap, StringFormat=N0}"/>
+            <controls:MetricRow Label="P/E Ratio (TTM)" Value="{Binding Data.Pe, StringFormat={}{0:0.00}}"/>
+            <controls:MetricRow Label="Forward P/E" Value="{Binding Data.ForwardPe, StringFormat={}{0:0.00}}"/>
+            <controls:MetricRow Label="PEG Ratio" Value="{Binding Data.Peg, StringFormat={}{0:0.00}}"/>
+            <controls:MetricRow Label="Price / Book" Value="{Binding Data.PriceToBook, StringFormat={}{0:0.00}}"/>
+            <controls:MetricRow Label="EV / EBITDA" Value="{Binding Data.EvToEbitda, StringFormat={}{0:0.00}}"/>
+            <StackPanel IsVisible="{Binding IsPro}">
+              <controls:MetricRow Label="Graham Number" Value="{Binding Data.GrahamNumber, StringFormat={}{0:0.00}}"/>
+              <controls:MetricRow Label="Book Value / Share" Value="{Binding Data.BookValuePerShare, StringFormat={}{0:0.00}}"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card" Margin="8,0,8,16">
+          <StackPanel>
+            <TextBlock Text="PROFITABILITY &amp; GROWTH" Classes="cardTitle"/>
+            <controls:MetricRow Label="Net Profit Margin" Value="{Binding Data.ProfitMargins, StringFormat=P2}"/>
+            <controls:MetricRow Label="Operating Margin" Value="{Binding Data.OperatingMargins, StringFormat=P2}"/>
+            <controls:MetricRow Label="Return on Assets" Value="{Binding Data.ReturnOnAssets, StringFormat=P2}"/>
+            <controls:MetricRow Label="Return on Equity" Value="{Binding Data.ReturnOnEquity, StringFormat=P2}"/>
+            <controls:MetricRow Label="Revenue Growth (YoY)" Value="{Binding Data.RevenueGrowth, StringFormat=P2}"/>
+            <controls:MetricRow Label="Earnings Growth (YoY)" Value="{Binding Data.EarningsGrowth, StringFormat=P2}"/>
+            <StackPanel IsVisible="{Binding IsPro}">
+              <controls:MetricRow Label="Diluted EPS" Value="{Binding Data.Eps, StringFormat={}{0:0.00}}"/>
+              <controls:MetricRow Label="Shares Outstanding" Value="{Binding Data.SharesOutstanding, StringFormat=N0}"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card" Margin="8,0,0,16">
+          <StackPanel>
+            <TextBlock Text="FINANCIAL HEALTH" Classes="cardTitle"/>
+            <controls:MetricRow Label="Debt / Equity" Value="{Binding Data.DebtToEquity, StringFormat={}{0:0.00}}"/>
+            <controls:MetricRow Label="Current Ratio" Value="{Binding Data.CurrentRatio, StringFormat={}{0:0.00}}"/>
+            <controls:MetricRow Label="Quick Ratio" Value="{Binding Data.QuickRatio, StringFormat={}{0:0.00}}"/>
+            <controls:MetricRow Label="Beta" Value="{Binding Data.Beta, StringFormat={}{0:0.00}}"/>
+            <controls:MetricRow Label="Dividend Yield" Value="{Binding Data.DividendYield, StringFormat=P2}"/>
+            <controls:MetricRow Label="EPS" Value="{Binding Data.Eps, StringFormat={}{0:0.00}}"/>
+            <controls:MetricRow Label="Free Cash Flow" Value="{Binding Data.FreeCashflow, StringFormat=N0}"
+                                 IsVisible="{Binding IsPro}"/>
+          </StackPanel>
+        </Border>
+      </UniformGrid>
+
+      <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+        <StackPanel>
+          <TextBlock Text="TRADING INFO" Classes="cardTitle"/>
+          <UniformGrid Columns="5" Rows="1">
+            <controls:MetricRow Label="52W High" Value="{Binding Data.FiftyTwoWeekHigh, StringFormat={}{0:0.00}}"/>
+            <controls:MetricRow Label="52W Low" Value="{Binding Data.FiftyTwoWeekLow, StringFormat={}{0:0.00}}"/>
+            <controls:MetricRow Label="Short Ratio" Value="{Binding Data.ShortRatio, StringFormat={}{0:0.00}}"/>
+            <controls:MetricRow Label="Short % of Float" Value="{Binding Data.ShortPercentOfFloat, StringFormat=P2}"/>
+            <controls:MetricRow Label="Institutional Own." Value="{Binding Data.InstitutionalOwnership, StringFormat=P2}"/>
+          </UniformGrid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card pro" IsVisible="{Binding IsPro}">
+        <StackPanel>
+          <TextBlock Text="GRAHAM VALUATION ANALYSIS" Classes="cardTitle"/>
+          <UniformGrid Columns="3" Rows="1" Margin="0,0,0,12">
+            <StackPanel>
+              <TextBlock Text="Graham Number" Classes="sectionLabel"/>
+              <TextBlock Text="{Binding Data.GrahamNumber, StringFormat={}{0:0.00}}" FontFamily="{StaticResource MonoFontFamily}" FontSize="18"
+                         Foreground="{DynamicResource PrimaryBrush}"/>
+            </StackPanel>
+            <StackPanel>
+              <TextBlock Text="52W High" Classes="sectionLabel"/>
+              <TextBlock Text="{Binding Data.FiftyTwoWeekHigh, StringFormat={}{0:0.00}}" FontFamily="{StaticResource MonoFontFamily}" FontSize="18"/>
+            </StackPanel>
+            <StackPanel>
+              <TextBlock Text="Trailing EPS" Classes="sectionLabel"/>
+              <TextBlock Text="{Binding Data.Eps, StringFormat={}{0:0.00}}" FontFamily="{StaticResource MonoFontFamily}" FontSize="18"/>
+            </StackPanel>
+          </UniformGrid>
+          <TextBlock Foreground="{DynamicResource PositiveBrush}" FontWeight="Bold" Text="↑ Below Graham"
+                     IsVisible="{Binding ShowBelowGraham}"/>
+          <TextBlock Foreground="{DynamicResource DestructiveBrush}" FontWeight="Bold" Text="↓ Above Graham"
+                     IsVisible="{Binding ShowAboveGraham}"/>
+          <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{DynamicResource MutedTextBrush}"
+                     Text="The Graham Number estimates fair value from earnings and book value per share. A price below it suggests the stock may be undervalued by this classic value-investing measure; a price above it suggests the opposite."/>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </StackPanel>
+</UserControl>
