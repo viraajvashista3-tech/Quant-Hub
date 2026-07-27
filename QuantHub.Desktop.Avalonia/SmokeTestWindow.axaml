@@ -1,13 +1,37 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="QuantHub.Desktop.SmokeTestWindow"
-        Title="Quant Terminal (Avalonia Phase 1 smoke test)"
-        Width="600" Height="300"
-        Background="#0A0B10">
-  <StackPanel Margin="24" Spacing="12">
-    <TextBlock Text="Avalonia + FluentAvalonia toolchain OK" Foreground="#00BFFF" FontSize="20" FontWeight="Bold" />
-    <TextBlock Text="Emoji glyph fallback check:" Foreground="#E6E8EC" />
-    <TextBlock Text="📈 🔍 ⟳ ⚙ ✅ ❌ ⚠️ 🤖" FontSize="28" Foreground="#E6E8EC" />
-    <Button Content="Sample FluentAvalonia Button" HorizontalAlignment="Left" />
+        Title="Quant Terminal (Avalonia Phase 2 smoke test)"
+        Width="760" Height="520"
+        Background="{DynamicResource BackgroundBrush}">
+  <StackPanel Margin="24" Spacing="14">
+    <TextBlock Text="Phase 2 infra check: Colors.axaml / Styles.axaml / theme resources" FontSize="16" FontWeight="Bold"/>
+
+    <Border Classes="card">
+      <StackPanel Spacing="8">
+        <TextBlock Text="CARD TITLE" Classes="cardTitle"/>
+        <TextBlock Text="This border uses Classes=&quot;card&quot; (SurfaceBrush + BoxShadow)."/>
+        <TextBlock Text="Mono value: 123.45" Classes="monoValue"/>
+      </StackPanel>
+    </Border>
+
+    <StackPanel Orientation="Horizontal" Spacing="10">
+      <Border Classes="statusBadge" Background="{DynamicResource PositiveBrush}">
+        <TextBlock Text="Positive badge" Foreground="White"/>
+      </Border>
+      <Border Classes="chip">
+        <TextBlock Text="CHIP" Classes="chipText"/>
+      </Border>
+    </StackPanel>
+
+    <StackPanel Orientation="Horizontal" Spacing="10">
+      <Button Content="Default button"/>
+      <Button Content="Primary button" Classes="primary"/>
+      <ToggleButton Content="Toggle me"/>
+    </StackPanel>
+
+    <TextBox Text="Ticker search box" Width="220"/>
+
+    <ProgressBar Value="65" Maximum="100"/>
   </StackPanel>
 </Window>

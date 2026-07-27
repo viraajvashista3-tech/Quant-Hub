@@ -1,11 +1,38 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:styling="using:FluentAvalonia.Styling"
+             xmlns:conv="using:QuantHub.Desktop.Converters"
+             xmlns:vmp="using:QuantHub.Desktop.ViewModels.Pages"
+             xmlns:viewsp="using:QuantHub.Desktop.Views.Pages"
              x:Class="QuantHub.Desktop.App"
              RequestedThemeVariant="Dark">
 
   <Application.Styles>
     <styling:FluentAvaloniaTheme PreferSystemTheme="False" PreferUserAccentColor="False" />
+    <StyleInclude Source="avares://QuantTerminal/Theming/Styles.axaml"/>
   </Application.Styles>
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://QuantTerminal/Theming/Colors.axaml"/>
+      </ResourceDictionary.MergedDictionaries>
+
+      <conv:NullOrEmptyToVisibilityConverter x:Key="NotEmptyToVis"/>
+      <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis"/>
+      <conv:SignalToBrushConverter x:Key="SignalToBrush"/>
+      <conv:VerdictToBrushConverter x:Key="VerdictToBrush"/>
+      <conv:NewsSentimentToBrushConverter x:Key="NewsSentimentToBrush"/>
+      <conv:VerdictToIconConverter x:Key="VerdictToIcon"/>
+      <conv:SignToBrushConverter x:Key="SignToBrush"/>
+      <conv:TransactionTypeToBrushConverter x:Key="TransactionTypeToBrush"/>
+      <conv:IsEqualConverter x:Key="IsEqual"/>
+
+      <!-- View-locator DataTemplate entries, added one at a time as each page is ported
+           (Phase 3/4) - ContentControl.Content is set to a raw page ViewModel and auto-resolves
+           to its View through these, same mechanism as the old WPF app's App.xaml. -->
+
+    </ResourceDictionary>
+  </Application.Resources>
 
 </Application>

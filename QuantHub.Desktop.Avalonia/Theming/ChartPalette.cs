@@ -1,0 +1,29 @@
+using Avalonia.Controls;
+using Avalonia.Media;
+using SkiaSharp;
+
+namespace QuantHub.Desktop.Theming;
+
+/// <summary>Single source of truth for chart/series colors LiveChartsCore needs as raw SKColor -
+/// reads the live value of the corresponding Avalonia brush resource each call, so charts stay
+/// theme/accent consistent instead of carrying their own hardcoded hex literals.</summary>
+public static class ChartPalette
+{
+    public static SKColor Primary => Resolve("PrimaryBrush");
+    public static SKColor Positive => Resolve("PositiveBrush");
+    public static SKColor Destructive => Resolve("DestructiveBrush");
+    public static SKColor Warning => Resolve("WarningBrush");
+    public static SKColor AxisText => Resolve("MutedTextBrush");
+    public static SKColor AxisLine => Resolve("PanelBorderBrush");
+    public static SKColor ChartAccent2 => Resolve("ChartAccent2Brush");
+    public static SKColor ChartAccent3 => Resolve("ChartAccent3Brush");
+    public static SKColor Upgrade => Resolve("UpgradeBrush");
+    public static SKColor Downgrade => Resolve("DowngradeBrush");
+
+    private static SKColor Resolve(string key)
+    {
+        var brush = Avalonia.Application.Current?.FindResource(key) as ISolidColorBrush;
+        var c = brush?.Color ?? Colors.Gray;
+        return new SKColor(c.R, c.G, c.B, c.A);
+    }
+}

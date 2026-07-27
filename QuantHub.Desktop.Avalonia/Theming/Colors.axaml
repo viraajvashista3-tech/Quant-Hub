@@ -1,0 +1,47 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Dark terminal palette (default) + light counterpart, full parity across every key so no
+       color is left "dark-only" - the old WPF app's light theme only overrode 5 of these 9 keys,
+       which is exactly why Positive/Destructive/Warning never actually changed color when
+       switching to light mode. Destructive/Warning are darkened slightly for light mode so they
+       still hold contrast against a white surface. -->
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="BackgroundBrush" Color="#0A0B10"/>
+      <SolidColorBrush x:Key="SurfaceBrush" Color="#0F1117"/>
+      <SolidColorBrush x:Key="PanelBorderBrush" Color="#2A2F3A"/>
+      <SolidColorBrush x:Key="TextBrush" Color="#E6E8EC"/>
+      <SolidColorBrush x:Key="MutedTextBrush" Color="#8B93A1"/>
+      <SolidColorBrush x:Key="HoverOverlayBrush" Color="#1A1E28"/>
+      <SolidColorBrush x:Key="PositiveBrush" Color="#10B981"/>
+      <SolidColorBrush x:Key="DestructiveBrush" Color="#EF4444"/>
+      <SolidColorBrush x:Key="WarningBrush" Color="#F59E0B"/>
+      <SolidColorBrush x:Key="ChartAccent2Brush" Color="#8B5CF6"/>
+      <SolidColorBrush x:Key="ChartAccent3Brush" Color="#6366F1"/>
+      <SolidColorBrush x:Key="UpgradeBrush" Color="#22C55E"/>
+      <SolidColorBrush x:Key="DowngradeBrush" Color="#F97316"/>
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="BackgroundBrush" Color="#F3F4F6"/>
+      <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF"/>
+      <SolidColorBrush x:Key="PanelBorderBrush" Color="#E2E5EA"/>
+      <SolidColorBrush x:Key="TextBrush" Color="#15171C"/>
+      <SolidColorBrush x:Key="MutedTextBrush" Color="#6B7280"/>
+      <SolidColorBrush x:Key="HoverOverlayBrush" Color="#EDEEF2"/>
+      <SolidColorBrush x:Key="PositiveBrush" Color="#10B981"/>
+      <SolidColorBrush x:Key="DestructiveBrush" Color="#DC2626"/>
+      <SolidColorBrush x:Key="WarningBrush" Color="#B45309"/>
+      <SolidColorBrush x:Key="ChartAccent2Brush" Color="#7C3AED"/>
+      <SolidColorBrush x:Key="ChartAccent3Brush" Color="#4F46E5"/>
+      <SolidColorBrush x:Key="UpgradeBrush" Color="#16A34A"/>
+      <SolidColorBrush x:Key="DowngradeBrush" Color="#EA580C"/>
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+
+  <!-- Accent color, orthogonal to light/dark - set imperatively by SettingsService.ApplyAccent()
+       so it survives theme swaps. Cyan here is just the compiled-in default before ApplyAccent()
+       runs once at startup. -->
+  <SolidColorBrush x:Key="PrimaryBrush" Color="#00BFFF"/>
+
+</ResourceDictionary>

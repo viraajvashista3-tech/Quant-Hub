@@ -1,0 +1,182 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Styles.Resources>
+    <ResourceDictionary>
+      <FontFamily x:Key="MonoFontFamily">Consolas</FontFamily>
+    </ResourceDictionary>
+  </Styles.Resources>
+
+  <!-- Safety-net default so every plain TextBlock (no explicit Foreground/class) follows the
+       active theme instead of falling back to Avalonia's default foreground. -->
+  <Style Selector="TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+  </Style>
+
+  <!-- Card: replaces WPF's CardStyle/ProCardStyle (Style="{StaticResource CardStyle}") - applied
+       here via Classes="card" / Classes="card pro" instead, Avalonia's idiomatic equivalent of a
+       named Style since Avalonia controls don't have a single WPF-style "Style" property. -->
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="14"/>
+    <Setter Property="Padding" Value="20"/>
+    <Setter Property="Margin" Value="0,0,0,16"/>
+    <Setter Property="BoxShadow" Value="0 3 16 0 #38000000"/>
+  </Style>
+  <Style Selector="Border.card.pro">
+    <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.cardTitle">
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}"/>
+    <Setter Property="Margin" Value="0,0,0,16"/>
+  </Style>
+
+  <!-- Beginner-mode headers stay in friendly sentence case, unlike the terminal-style uppercase
+       cardTitle used everywhere else (callers pass already-uppercase literal text for cardTitle). -->
+  <Style Selector="TextBlock.friendlyCardTitle">
+    <Setter Property="FontSize" Value="15"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+    <Setter Property="Margin" Value="0,0,0,12"/>
+  </Style>
+
+  <Style Selector="Border.chip">
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Padding" Value="10,4"/>
+    <Setter Property="Background" Value="{DynamicResource PositiveBrush}"/>
+  </Style>
+  <Style Selector="TextBlock.chipText">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+    <Setter Property="Foreground" Value="White"/>
+  </Style>
+
+  <!-- Rounded status pill (signal/consensus/net-sentiment badges) - callers set Background locally
+       via SignalToBrush/ConsensusBrush/etc bindings. -->
+  <Style Selector="Border.statusBadge">
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="14,7"/>
+    <Setter Property="BoxShadow" Value="0 2 8 0 #4D000000"/>
+  </Style>
+
+  <Style Selector="TextBlock.monoValue">
+    <Setter Property="FontFamily" Value="{StaticResource MonoFontFamily}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.sectionLabel">
+    <Setter Property="FontFamily" Value="Segoe UI"/>
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}"/>
+  </Style>
+
+  <!-- Button/ToggleButton/TextBox/ListBoxItem restyle: layered on top of FluentAvaloniaTheme's own
+       ControlThemes (set in App.axaml) rather than replacing them with hand-rolled ControlTemplates
+       - only top-level property setters, which flow through FluentAvalonia's own template via its
+       TemplateBindings. Deliberately not chasing template-part-level pseudo-class overrides here;
+       verify visually once a real page is on screen (Phase 3) and only add /template/-targeted
+       selectors if a specific state doesn't visually respond to these. -->
+  <Style Selector="Button">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Padding" Value="14,8"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="Button:pointerover">
+    <Setter Property="Background" Value="{DynamicResource HoverOverlayBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+  </Style>
+  <Style Selector="Button:pressed">
+    <Setter Property="Opacity" Value="0.8"/>
+  </Style>
+  <Style Selector="Button:disabled">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+
+  <!-- Accent-filled CTA button (AI chat Send, etc.) - Classes="primary" instead of WPF's
+       PrimaryButtonStyle StaticResource. -->
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+    <Setter Property="Foreground" Value="White"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="Padding" Value="18,9"/>
+    <Setter Property="CornerRadius" Value="10"/>
+  </Style>
+  <Style Selector="Button.primary:pointerover">
+    <Setter Property="Opacity" Value="0.88"/>
+  </Style>
+  <Style Selector="Button.primary:pressed">
+    <Setter Property="Opacity" Value="0.75"/>
+  </Style>
+  <Style Selector="Button.primary:disabled">
+    <Setter Property="Opacity" Value="0.4"/>
+  </Style>
+
+  <Style Selector="ToggleButton">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Padding" Value="12,7"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="ToggleButton:checked">
+    <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+    <Setter Property="Foreground" Value="White"/>
+  </Style>
+  <Style Selector="ToggleButton:pointerover">
+    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+  </Style>
+
+  <Style Selector="ProgressBar">
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+    <Setter Property="Background" Value="{DynamicResource PanelBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius" Value="3"/>
+    <Setter Property="Height" Value="6"/>
+  </Style>
+
+  <Style Selector="TextBox">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+    <Setter Property="CaretBrush" Value="{DynamicResource PrimaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Padding" Value="8,6"/>
+    <Setter Property="FontFamily" Value="{StaticResource MonoFontFamily}"/>
+    <Setter Property="CornerRadius" Value="10"/>
+  </Style>
+  <Style Selector="TextBox:focus">
+    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+  </Style>
+
+  <Style Selector="ListBoxItem">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+    <Setter Property="Padding" Value="12,10"/>
+    <Setter Property="Margin" Value="0,0,0,2"/>
+    <Setter Property="FontWeight" Value="Medium"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Cursor" Value="Hand"/>
+  </Style>
+  <Style Selector="ListBoxItem:selected">
+    <Setter Property="Background" Value="{DynamicResource PanelBorderBrush}"/>
+  </Style>
+  <Style Selector="ListBoxItem:pointerover">
+    <Setter Property="Background" Value="{DynamicResource HoverOverlayBrush}"/>
+  </Style>
+
+</Styles>
