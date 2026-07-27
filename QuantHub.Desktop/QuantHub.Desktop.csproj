@@ -26,11 +26,11 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
   </ItemGroup>
 
-  <!-- Phase 5 packaging: a single self-contained .exe with no .NET runtime install required.
-       Scoped to `dotnet publish` only (via the RuntimeIdentifier condition) so plain
-       `dotnet build`/`dotnet run` during development stay fast and keep their normal output path -
-       these properties would otherwise force a win-x64 restore and copy the whole runtime into
-       bin/ on every single build. -->
+  <!-- Packaging: a single self-contained .exe with no .NET runtime install required. Scoped to
+       `dotnet publish` only (via the RuntimeIdentifier condition) so plain `dotnet build`/`dotnet
+       run` during development stay fast and keep their normal output path - these properties
+       would otherwise force a win-x64 restore and copy the whole runtime into bin/ on every
+       single build. -->
   <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>

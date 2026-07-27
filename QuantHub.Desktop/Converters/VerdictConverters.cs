@@ -9,7 +9,7 @@ public sealed class VerdictToBrushConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        var key = value as string switch
+        var key = (value as string) switch
         {
             "Positive" => "PositiveBrush",
             "Negative" => "DestructiveBrush",
@@ -27,7 +27,7 @@ public sealed class VerdictToBrushConverter : IValueConverter
 /// CheckCircle (positive) / XCircle (negative) / AlertCircle (warning/neutral) treatment.</summary>
 public sealed class VerdictToIconConverter : IValueConverter
 {
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value as string switch
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => (value as string) switch
     {
         "Positive" => "✅",
         "Negative" => "❌",
@@ -45,7 +45,7 @@ public sealed class NewsSentimentToBrushConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        var key = value as string switch
+        var key = (value as string) switch
         {
             "Bullish" or "Mildly Bullish" => "PositiveBrush",
             "Bearish" or "Mildly Bearish" => "DestructiveBrush",
@@ -64,7 +64,7 @@ public sealed class TransactionTypeToBrushConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        var key = value as string switch
+        var key = (value as string) switch
         {
             "Purchase" => "PositiveBrush",
             "Sale" => "DestructiveBrush",
