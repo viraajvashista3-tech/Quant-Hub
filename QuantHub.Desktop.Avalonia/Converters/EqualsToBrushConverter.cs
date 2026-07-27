@@ -1,7 +1,7 @@
 using System.Globalization;
-using Avalonia.Controls;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
+using QuantHub.Desktop.Theming;
 
 namespace QuantHub.Desktop.Converters;
 
@@ -19,11 +19,6 @@ public sealed class EqualsToBrushConverter : IMultiValueConverter
         var equal = values is [{ } a, { } b] && a.Equals(b);
         var parts = (parameter as string)?.Split('|') ?? ["PrimaryBrush", "SurfaceBrush"];
         var key = equal ? parts[0] : parts[1];
-        return Resolve(key);
+        return ThemeResources.GetBrush(key);
     }
-
-    private static IBrush Resolve(string key) =>
-        Avalonia.Application.Current?.TryFindResource(key, out var res) == true && res is IBrush brush
-            ? brush
-            : Brush.Parse(key);
 }

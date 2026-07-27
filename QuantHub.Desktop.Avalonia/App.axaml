@@ -48,6 +48,15 @@
     <DataTemplate DataType="{x:Type vmp:FundamentalsViewModel}">
       <viewsp:FundamentalsView/>
     </DataTemplate>
+    <DataTemplate DataType="{x:Type vmp:AnalystViewModel}">
+      <viewsp:AnalystView/>
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmp:MarketPulseViewModel}">
+      <viewsp:MarketPulseView/>
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmp:InsiderViewModel}">
+      <viewsp:InsiderView/>
+    </DataTemplate>
   </Application.DataTemplates>
 
 </Application>

@@ -1,8 +1,7 @@
 using System.Globalization;
-using Avalonia.Controls;
 using Avalonia.Data.Converters;
-using Avalonia.Media;
 using QuantHub.Core.Models;
+using QuantHub.Desktop.Theming;
 
 namespace QuantHub.Desktop.Converters;
 
@@ -16,7 +15,7 @@ public sealed class SignalToBrushConverter : IValueConverter
             Signal.Avoid => "DestructiveBrush",
             _ => "WarningBrush"
         };
-        return Avalonia.Application.Current?.TryFindResource(key, out var res) == true ? res as IBrush : Brushes.Gray;
+        return ThemeResources.GetBrush(key);
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>

@@ -1,0 +1,137 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             x:Class="QuantHub.Desktop.Views.Pages.MarketPulseView">
+  <StackPanel>
+
+    <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DestructiveBrush}"
+               IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmptyToVis}}"
+               Margin="0,0,0,16" TextWrapping="Wrap"/>
+
+    <StackPanel IsVisible="{Binding Data, Converter={StaticResource NotEmptyToVis}}">
+
+      <Border Classes="card">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <StackPanel Grid.Column="0">
+            <TextBlock Text="MARKET MOOD" Classes="sectionLabel"/>
+            <TextBlock Text="{Binding Data.MarketMood}" FontSize="26" FontWeight="Bold" Foreground="{Binding MoodBrush}"/>
+          </StackPanel>
+          <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+            <TextBlock Text="VIX" Classes="sectionLabel" HorizontalAlignment="Right"/>
+            <TextBlock Text="{Binding Data.Vix, StringFormat={}{0:0.00}}" FontFamily="{StaticResource MonoFontFamily}" FontSize="22" HorizontalAlignment="Right"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- Beginner: plain-English mood + rotation read; Intermediate/Pro see the raw note instead -->
+      <Border Classes="card" IsVisible="{Binding IsBeginner}">
+        <TextBlock Text="{Binding BeginnerSummary}" TextWrapping="Wrap" FontSize="15"/>
+      </Border>
+
+      <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+        <StackPanel IsVisible="{Binding Data.RotationNote, Converter={StaticResource NotEmptyToVis}}">
+          <TextBlock Text="{Binding Data.RotationNote}" TextWrapping="Wrap"/>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+        <StackPanel>
+          <TextBlock Text="MAJOR INDICES" Classes="cardTitle"/>
+          <ItemsControl ItemsSource="{Binding Data.Indices}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <UniformGrid Columns="4" Rows="1"/>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Margin="0,0,12,0">
+                  <TextBlock Text="{Binding Label}" Classes="sectionLabel"/>
+                  <TextBlock Text="{Binding Price, StringFormat={}{0:0.00}}" FontFamily="{StaticResource MonoFontFamily}" FontSize="18"/>
+                  <TextBlock Text="{Binding ChangePct, StringFormat={}{0:+0.00;-0.00}%}" FontFamily="{StaticResource MonoFontFamily}" FontSize="13"
+                             Foreground="{Binding ChangePct, Converter={StaticResource SignToBrush}}"/>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+        <StackPanel IsVisible="{Binding Data.Sectors, Converter={StaticResource NotEmptyToVis}}">
+          <TextBlock Text="SECTOR PERFORMANCE (1D %)" Classes="cardTitle"/>
+          <lvc:CartesianChart Series="{Binding SectorSeries}" XAxes="{Binding SectorXAxes}" YAxes="{Binding SectorYAxes}"
+                               Background="Transparent" Height="380"/>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+        <StackPanel>
+          <TextBlock Text="MACRO" Classes="cardTitle"/>
+          <ItemsControl ItemsSource="{Binding Data.Macro}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <UniformGrid Columns="3"/>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Margin="0,0,12,16">
+                  <TextBlock Text="{Binding Label}" Classes="sectionLabel"/>
+                  <TextBlock Text="{Binding Price, StringFormat={}{0:0.00}}" FontFamily="{StaticResource MonoFontFamily}" FontSize="18"/>
+                  <TextBlock Text="{Binding ChangePct, StringFormat={}{0:+0.00;-0.00}%}" FontFamily="{StaticResource MonoFontFamily}" FontSize="13"
+                             Foreground="{Binding ChangePct, Converter={StaticResource SignToBrush}}"/>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <!-- Pro only: everything in one 1D/1W/1M table -->
+      <Border Classes="card pro" IsVisible="{Binding IsPro}">
+        <StackPanel>
+          <TextBlock Text="DETAILED BREAKDOWN" Classes="cardTitle"/>
+          <Grid Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="90"/>
+              <ColumnDefinition Width="90"/>
+              <ColumnDefinition Width="90"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="INSTRUMENT" Classes="sectionLabel"/>
+            <TextBlock Grid.Column="1" Text="1D" Classes="sectionLabel"/>
+            <TextBlock Grid.Column="2" Text="1W" Classes="sectionLabel"/>
+            <TextBlock Grid.Column="3" Text="1M" Classes="sectionLabel"/>
+          </Grid>
+          <ItemsControl ItemsSource="{Binding DetailRows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid Margin="0,0,0,8">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="90"/>
+                    <ColumnDefinition Width="90"/>
+                    <ColumnDefinition Width="90"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="{Binding Label}" VerticalAlignment="Center"/>
+                  <TextBlock Grid.Column="1" Text="{Binding ChangePct, StringFormat={}{0:+0.00;-0.00}%}" FontFamily="{StaticResource MonoFontFamily}"
+                             Foreground="{Binding ChangePct, Converter={StaticResource SignToBrush}}"/>
+                  <TextBlock Grid.Column="2" Text="{Binding Change1wPct, StringFormat={}{0:+0.00;-0.00}%}" FontFamily="{StaticResource MonoFontFamily}"
+                             Foreground="{Binding Change1wPct, Converter={StaticResource SignToBrush}}"/>
+                  <TextBlock Grid.Column="3" Text="{Binding Change1mPct, StringFormat={}{0:+0.00;-0.00}%}" FontFamily="{StaticResource MonoFontFamily}"
+                             Foreground="{Binding Change1mPct, Converter={StaticResource SignToBrush}}"/>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </StackPanel>
+</UserControl>

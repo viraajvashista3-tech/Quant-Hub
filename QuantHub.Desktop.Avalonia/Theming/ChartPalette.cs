@@ -1,5 +1,3 @@
-using Avalonia.Controls;
-using Avalonia.Media;
 using SkiaSharp;
 
 namespace QuantHub.Desktop.Theming;
@@ -22,8 +20,7 @@ public static class ChartPalette
 
     private static SKColor Resolve(string key)
     {
-        var brush = Avalonia.Application.Current?.FindResource(key) as ISolidColorBrush;
-        var c = brush?.Color ?? Colors.Gray;
+        var c = ThemeResources.GetColor(key);
         return new SKColor(c.R, c.G, c.B, c.A);
     }
 }

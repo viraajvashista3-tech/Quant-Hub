@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using QuantHub.Core.Models;
 using QuantHub.Core.Services;
 using QuantHub.Desktop.Services;
+using QuantHub.Desktop.Theming;
 
 namespace QuantHub.Desktop.ViewModels.Pages;
 
@@ -31,9 +32,9 @@ public sealed partial class InsiderViewModel : ObservableObject, IRefreshablePag
 
     public IBrush SentimentBrush => Data?.NetSentiment switch
     {
-        "Net Buyers" => (IBrush)Avalonia.Application.Current!.Resources["PositiveBrush"]!,
-        "Net Sellers" => (IBrush)Avalonia.Application.Current!.Resources["DestructiveBrush"]!,
-        _ => (IBrush)Avalonia.Application.Current!.Resources["MutedTextBrush"]!
+        "Net Buyers" => ThemeResources.GetBrush("PositiveBrush"),
+        "Net Sellers" => ThemeResources.GetBrush("DestructiveBrush"),
+        _ => ThemeResources.GetBrush("MutedTextBrush")
     };
 
     public string? BeginnerSummary

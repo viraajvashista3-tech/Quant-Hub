@@ -189,8 +189,7 @@ public sealed partial class PeersViewModel : ObservableObject, IRefreshablePage
 
     /// <summary>Resolves the live value of an Avalonia brush resource each call (rather than caching
     /// once), so the heatmap's interpolated colors stay correct if the theme changes.</summary>
-    private static Color ResolveColor(string key) =>
-        (Avalonia.Application.Current?.FindResource(key) as ISolidColorBrush)?.Color ?? Colors.Gray;
+    private static Color ResolveColor(string key) => ThemeResources.GetColor(key);
 
     private static IBrush CorrelationColor(double? value)
     {

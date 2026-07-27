@@ -46,9 +46,9 @@ public sealed partial class MarketPulseViewModel : ObservableObject, IRefreshabl
 
     public IBrush MoodBrush => Data?.MarketMood switch
     {
-        "Extreme Fear" or "Fear" => (IBrush)Avalonia.Application.Current!.Resources["DestructiveBrush"]!,
-        "Greed" or "Extreme Greed" => (IBrush)Avalonia.Application.Current!.Resources["PositiveBrush"]!,
-        _ => (IBrush)Avalonia.Application.Current!.Resources["WarningBrush"]!
+        "Extreme Fear" or "Fear" => ThemeResources.GetBrush("DestructiveBrush"),
+        "Greed" or "Extreme Greed" => ThemeResources.GetBrush("PositiveBrush"),
+        _ => ThemeResources.GetBrush("WarningBrush")
     };
 
     public string? BeginnerSummary

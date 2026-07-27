@@ -42,10 +42,10 @@ public sealed partial class AnalystViewModel : ObservableObject, IRefreshablePag
 
     public IBrush ConsensusBrush => Data?.ConsensusRating switch
     {
-        "Strong Buy" or "Buy" => (IBrush)Avalonia.Application.Current!.Resources["PositiveBrush"]!,
-        "Hold" => (IBrush)Avalonia.Application.Current!.Resources["WarningBrush"]!,
-        "Sell" or "Strong Sell" => (IBrush)Avalonia.Application.Current!.Resources["DestructiveBrush"]!,
-        _ => (IBrush)Avalonia.Application.Current!.Resources["MutedTextBrush"]!
+        "Strong Buy" or "Buy" => ThemeResources.GetBrush("PositiveBrush"),
+        "Hold" => ThemeResources.GetBrush("WarningBrush"),
+        "Sell" or "Strong Sell" => ThemeResources.GetBrush("DestructiveBrush"),
+        _ => ThemeResources.GetBrush("MutedTextBrush")
     };
 
     /// <summary>Plain-English framing for Beginner: consensus + price target expressed as upside/

@@ -1,0 +1,135 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             x:Class="QuantHub.Desktop.Views.Pages.AnalystView">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.wallStreetHeading">
+      <Setter Property="Text" Value="WHAT WALL STREET IS SAYING"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}"/>
+      <Setter Property="Margin" Value="0,0,0,16"/>
+    </Style>
+    <Style Selector="TextBlock.wallStreetHeading.beginner">
+      <Setter Property="Text" Value="What analysts are saying"/>
+      <Setter Property="FontSize" Value="15"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+    </Style>
+  </UserControl.Styles>
+
+  <StackPanel>
+
+    <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DestructiveBrush}"
+               IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmptyToVis}}"
+               Margin="0,0,0,16" TextWrapping="Wrap"/>
+
+    <StackPanel IsVisible="{Binding Data, Converter={StaticResource NotEmptyToVis}}">
+
+      <Border Classes="card">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <StackPanel Grid.Column="0">
+            <TextBlock Text="{Binding Data.Ticker}" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}"/>
+            <TextBlock Text="Analyst Consensus" FontSize="12" Foreground="{DynamicResource MutedTextBrush}"/>
+          </StackPanel>
+          <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+            <Border Classes="statusBadge" Background="{Binding ConsensusBrush}" HorizontalAlignment="Right">
+              <TextBlock Text="{Binding Data.ConsensusRating}" FontWeight="Bold" FontSize="16" Foreground="White"/>
+            </Border>
+            <TextBlock Text="{Binding Data.NumAnalysts, StringFormat='{}{0} analysts'}" FontSize="12"
+                       Foreground="{DynamicResource MutedTextBrush}" HorizontalAlignment="Right" Margin="0,6,0,0"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- Beginner: plain-English coverage + target framing, no raw dollar grid -->
+      <Border Classes="card" IsVisible="{Binding IsBeginner}">
+        <TextBlock Text="{Binding BeginnerSummary}" TextWrapping="Wrap" FontSize="15"/>
+      </Border>
+
+      <!-- Intermediate + Pro: raw price target figures -->
+      <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+        <StackPanel>
+          <TextBlock Text="PRICE TARGETS" Classes="cardTitle"/>
+          <UniformGrid Columns="4" Rows="1">
+            <StackPanel>
+              <TextBlock Text="Low" Classes="sectionLabel"/>
+              <TextBlock Text="{Binding Data.TargetLow, StringFormat={}{0:0.00}}" FontFamily="{StaticResource MonoFontFamily}" FontSize="20"
+                         Foreground="{DynamicResource DestructiveBrush}"/>
+            </StackPanel>
+            <StackPanel>
+              <TextBlock Text="Mean" Classes="sectionLabel"/>
+              <TextBlock Text="{Binding Data.TargetMean, StringFormat={}{0:0.00}}" FontFamily="{StaticResource MonoFontFamily}" FontSize="20"
+                         Foreground="{DynamicResource TextBrush}"/>
+            </StackPanel>
+            <StackPanel>
+              <TextBlock Text="High" Classes="sectionLabel"/>
+              <TextBlock Text="{Binding Data.TargetHigh, StringFormat={}{0:0.00}}" FontFamily="{StaticResource MonoFontFamily}" FontSize="20"
+                         Foreground="{DynamicResource PositiveBrush}"/>
+            </StackPanel>
+            <StackPanel>
+              <TextBlock Text="Current" Classes="sectionLabel"/>
+              <TextBlock Text="{Binding Data.CurrentPrice, StringFormat={}{0:0.00}}" FontFamily="{StaticResource MonoFontFamily}" FontSize="20"
+                         Foreground="{DynamicResource PrimaryBrush}"/>
+            </StackPanel>
+          </UniformGrid>
+        </StackPanel>
+      </Border>
+
+      <!-- Intermediate + Pro: recommendation trend chart -->
+      <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+        <StackPanel IsVisible="{Binding Data.RecommendationTrend, Converter={StaticResource NotEmptyToVis}}">
+          <TextBlock Text="RECOMMENDATION TREND" Classes="cardTitle"/>
+          <lvc:CartesianChart Series="{Binding TrendSeries}" XAxes="{Binding TrendXAxes}" YAxes="{Binding TrendYAxes}"
+                               Background="Transparent" Height="220"/>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
+            <StackPanel Orientation="Horizontal" Margin="0,0,16,0">
+              <Border Width="10" Height="10" Margin="0,0,6,0" Background="{DynamicResource PositiveBrush}"/>
+              <TextBlock Text="Strong Buy" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,16,0">
+              <Border Width="10" Height="10" Margin="0,0,6,0" Background="{DynamicResource UpgradeBrush}"/>
+              <TextBlock Text="Buy" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,16,0">
+              <Border Width="10" Height="10" Margin="0,0,6,0" Background="{DynamicResource WarningBrush}"/>
+              <TextBlock Text="Hold" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,16,0">
+              <Border Width="10" Height="10" Margin="0,0,6,0" Background="{DynamicResource DowngradeBrush}"/>
+              <TextBlock Text="Sell" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+              <Border Width="10" Height="10" Margin="0,0,6,0" Background="{DynamicResource DestructiveBrush}"/>
+              <TextBlock Text="Strong Sell" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- All tiers: real recorded upgrades/downgrades read as plain sentences (Yahoo has no
+           free-text analyst quotes - this is the genuine action/grade/date history). Beginner
+           gets 5, Intermediate 15, Pro 40 (via NarrativeActions in the view model). -->
+      <Border Classes="card" IsVisible="{Binding NarrativeActions, Converter={StaticResource NotEmptyToVis}}">
+        <StackPanel>
+          <TextBlock Classes="wallStreetHeading" Classes.beginner="{Binding IsBeginner}"/>
+          <ItemsControl ItemsSource="{Binding NarrativeActions}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                  <Ellipse Width="6" Height="6" Margin="2,7,10,0" VerticalAlignment="Top" Fill="{DynamicResource PrimaryBrush}"/>
+                  <TextBlock Text="{Binding}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </StackPanel>
+</UserControl>

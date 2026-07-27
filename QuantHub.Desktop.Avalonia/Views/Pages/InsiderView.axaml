@@ -1,0 +1,140 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="QuantHub.Desktop.Views.Pages.InsiderView">
+  <StackPanel>
+
+    <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DestructiveBrush}"
+               IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmptyToVis}}"
+               Margin="0,0,0,16" TextWrapping="Wrap"/>
+
+    <StackPanel IsVisible="{Binding Data, Converter={StaticResource NotEmptyToVis}}">
+
+      <Border Classes="card">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <StackPanel Grid.Column="0">
+            <TextBlock Text="{Binding Data.Ticker}" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}"/>
+            <TextBlock Text="{Binding Data.Name}" FontSize="12" Foreground="{DynamicResource MutedTextBrush}"/>
+          </StackPanel>
+          <Border Grid.Column="2" Classes="statusBadge" Background="{Binding SentimentBrush}" HorizontalAlignment="Right">
+            <TextBlock Text="{Binding Data.NetSentiment}" FontWeight="Bold" FontSize="16" Foreground="White"/>
+          </Border>
+        </Grid>
+      </Border>
+
+      <!-- Beginner: plain-English buy/sell sentiment, no raw ownership grid -->
+      <Border Classes="card" IsVisible="{Binding IsBeginner}">
+        <TextBlock Text="{Binding BeginnerSummary}" TextWrapping="Wrap" FontSize="15"/>
+      </Border>
+
+      <UniformGrid Columns="2" Rows="1" IsVisible="{Binding IsIntermediatePlus}">
+        <Border Classes="card" Margin="0,0,8,16">
+          <StackPanel>
+            <TextBlock Text="OWNERSHIP" Classes="cardTitle"/>
+            <UniformGrid Columns="2" Rows="1">
+              <StackPanel>
+                <TextBlock Text="Insider" Classes="sectionLabel"/>
+                <TextBlock Text="{Binding Data.InsiderOwnership, StringFormat=P2}" FontFamily="{StaticResource MonoFontFamily}" FontSize="20"/>
+              </StackPanel>
+              <StackPanel>
+                <TextBlock Text="Institutional" Classes="sectionLabel"/>
+                <TextBlock Text="{Binding Data.InstitutionalOwnership, StringFormat=P2}" FontFamily="{StaticResource MonoFontFamily}" FontSize="20"/>
+              </StackPanel>
+            </UniformGrid>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card" Margin="8,0,0,16"
+                IsVisible="{Binding Data.Purchases6m, Converter={StaticResource NotEmptyToVis}}">
+          <StackPanel>
+            <TextBlock Text="LAST 6 MONTHS" Classes="cardTitle"/>
+            <UniformGrid Columns="2" Rows="1">
+              <StackPanel>
+                <TextBlock Text="Bought" Classes="sectionLabel"/>
+                <TextBlock Text="{Binding Data.Purchases6m.PurchaseShares, StringFormat={}{0:N0} sh}"
+                           FontFamily="{StaticResource MonoFontFamily}" FontSize="16" Foreground="{DynamicResource PositiveBrush}"/>
+                <TextBlock Text="{Binding Data.Purchases6m.PurchaseTrans, StringFormat={}{0:N0} transactions}"
+                           FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
+              </StackPanel>
+              <StackPanel>
+                <TextBlock Text="Sold" Classes="sectionLabel"/>
+                <TextBlock Text="{Binding Data.Purchases6m.SaleShares, StringFormat={}{0:N0} sh}"
+                           FontFamily="{StaticResource MonoFontFamily}" FontSize="16" Foreground="{DynamicResource DestructiveBrush}"/>
+                <TextBlock Text="{Binding Data.Purchases6m.SaleTrans, StringFormat={}{0:N0} transactions}"
+                           FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
+              </StackPanel>
+            </UniformGrid>
+          </StackPanel>
+        </Border>
+      </UniformGrid>
+
+      <!-- Beginner: same real transactions, read as plain sentences instead of a grid -->
+      <Border Classes="card" IsVisible="{Binding IsBeginner}">
+        <StackPanel>
+          <TextBlock Text="Recent insider activity" Classes="friendlyCardTitle"/>
+          <ItemsControl ItemsSource="{Binding NarrativeTransactions}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                  <Ellipse Width="6" Height="6" Margin="2,7,10,0" VerticalAlignment="Top" Fill="{DynamicResource PrimaryBrush}"/>
+                  <TextBlock Text="{Binding}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <!-- Intermediate + Pro: full transaction table -->
+      <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+        <StackPanel>
+          <TextBlock Text="TRANSACTIONS" Classes="cardTitle"/>
+          <Grid Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="100"/>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="130"/>
+              <ColumnDefinition Width="110"/>
+              <ColumnDefinition Width="140"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="DATE" Classes="sectionLabel"/>
+            <TextBlock Grid.Column="1" Text="INSIDER" Classes="sectionLabel"/>
+            <TextBlock Grid.Column="2" Text="TYPE" Classes="sectionLabel"/>
+            <TextBlock Grid.Column="3" Text="SHARES" Classes="sectionLabel"/>
+            <TextBlock Grid.Column="4" Text="VALUE" Classes="sectionLabel"/>
+          </Grid>
+          <ItemsControl ItemsSource="{Binding VisibleTransactions}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid Margin="0,0,0,10">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="130"/>
+                    <ColumnDefinition Width="110"/>
+                    <ColumnDefinition Width="140"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="{Binding Date}" FontFamily="{StaticResource MonoFontFamily}" FontSize="12"
+                             Foreground="{DynamicResource MutedTextBrush}"/>
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding Insider}" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding Position}" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"
+                               IsVisible="{Binding Position, Converter={StaticResource NotEmptyToVis}}"/>
+                  </StackPanel>
+                  <TextBlock Grid.Column="2" Text="{Binding TransactionType}" FontWeight="SemiBold"
+                             Foreground="{Binding TransactionType, Converter={StaticResource TransactionTypeToBrush}}"/>
+                  <TextBlock Grid.Column="3" Text="{Binding Shares, StringFormat=N0}" FontFamily="{StaticResource MonoFontFamily}"/>
+                  <TextBlock Grid.Column="4" Text="{Binding Value, StringFormat=C0}" FontFamily="{StaticResource MonoFontFamily}"/>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </StackPanel>
+</UserControl>
