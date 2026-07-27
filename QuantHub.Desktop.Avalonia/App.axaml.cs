@@ -12,6 +12,7 @@ using QuantHub.Core.Yahoo;
 using QuantHub.Desktop.Services;
 using QuantHub.Desktop.ViewModels;
 using QuantHub.Desktop.ViewModels.Pages;
+using QuantHub.Desktop.Views;
 
 namespace QuantHub.Desktop;
 
@@ -49,15 +50,14 @@ public partial class App : Application
                     services.AddSingleton<ComingSoonViewModel>();
                     services.AddSingleton<SettingsViewModel>();
                     services.AddSingleton<ShellViewModel>();
-                    // ShellWindow itself is registered/resolved starting Phase 3, once it exists -
-                    // until then this DI container backs a throwaway smoke-test window only.
+                    services.AddSingleton<ShellWindow>();
                 })
                 .Build();
 
             _host.Start();
             _host.Services.GetRequiredService<SettingsService>().ApplyTheme();
 
-            desktop.MainWindow = new SmokeTestWindow { DataContext = _host.Services.GetRequiredService<ShellViewModel>() };
+            desktop.MainWindow = _host.Services.GetRequiredService<ShellWindow>();
             desktop.Exit += (_, _) =>
             {
                 _host.StopAsync().GetAwaiter().GetResult();

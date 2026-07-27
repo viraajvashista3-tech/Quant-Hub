@@ -27,12 +27,17 @@
       <conv:SignToBrushConverter x:Key="SignToBrush"/>
       <conv:TransactionTypeToBrushConverter x:Key="TransactionTypeToBrush"/>
       <conv:IsEqualConverter x:Key="IsEqual"/>
-
-      <!-- View-locator DataTemplate entries, added one at a time as each page is ported
-           (Phase 3/4) - ContentControl.Content is set to a raw page ViewModel and auto-resolves
-           to its View through these, same mechanism as the old WPF app's App.xaml. -->
-
     </ResourceDictionary>
   </Application.Resources>
+
+  <!-- View-locator DataTemplate entries, added one at a time as each page is ported (Phase 3/4) -
+       ShellWindow's ContentControl.Content is set to a raw page ViewModel and auto-resolves to its
+       View through these, via Avalonia's global Application.DataTemplates (the equivalent of WPF's
+       implicit-DataTemplate-in-a-ResourceDictionary pattern). -->
+  <Application.DataTemplates>
+    <DataTemplate DataType="{x:Type vmp:UniverseViewModel}">
+      <viewsp:UniverseView/>
+    </DataTemplate>
+  </Application.DataTemplates>
 
 </Application>

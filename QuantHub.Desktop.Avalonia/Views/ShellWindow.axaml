@@ -1,0 +1,102 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="QuantHub.Desktop.Views.ShellWindow"
+        Title="Quant Terminal" Height="900" Width="1440" MinHeight="600" MinWidth="1000"
+        WindowStartupLocation="CenterScreen" WindowState="Maximized"
+        Background="{DynamicResource BackgroundBrush}">
+  <Window.Styles>
+    <Style Selector="Border.tickerFocus">
+      <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+    </Style>
+    <Style Selector="Button.active">
+      <Setter Property="Background" Value="{DynamicResource PanelBorderBrush}"/>
+    </Style>
+  </Window.Styles>
+
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="280"/>
+      <ColumnDefinition Width="*"/>
+    </Grid.ColumnDefinitions>
+
+    <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="0,0,1,0">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Margin="16">
+          <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+            <TextBlock Text="📈" FontSize="22" Margin="0,0,8,0"/>
+            <TextBlock Text="QUANT TERMINAL" FontWeight="Bold" FontSize="16"
+                       Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center"/>
+          </StackPanel>
+
+          <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}"
+                  BorderThickness="1" CornerRadius="10" Height="40"
+                  Classes.tickerFocus="{Binding IsKeyboardFocusWithin, ElementName=TickerBox}">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="🔍" FontSize="13" Margin="14,0,0,0" VerticalAlignment="Center"
+                         Opacity="0.6"/>
+              <TextBox x:Name="TickerBox" Grid.Column="1" Text="{Binding TickerInput}"
+                       Background="Transparent" BorderThickness="0" FontSize="15" FontWeight="Bold"
+                       VerticalAlignment="Center" Padding="10,0,10,0"
+                       ToolTip.Tip="Type any ticker symbol - every page updates instantly."/>
+            </Grid>
+          </Border>
+
+          <ListBox Margin="0,16,0,0" Background="Transparent" BorderThickness="0"
+                   ItemsSource="{Binding NavItems}"
+                   SelectedItem="{Binding SelectedNav, Mode=TwoWay}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="{Binding Icon}" FontSize="15" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding Label}" VerticalAlignment="Center"/>
+                  <Border Classes="chip" Background="{DynamicResource PrimaryBrush}"
+                          Padding="6,1" Margin="8,0,0,0"
+                          IsVisible="{Binding IsBeta}">
+                    <TextBlock Text="BETA" FontSize="9" FontWeight="Bold" Foreground="White"/>
+                  </Border>
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Bottom" Margin="16">
+          <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}"
+                  BorderThickness="1" CornerRadius="8" Padding="0,6" Margin="0,0,0,10" HorizontalAlignment="Stretch">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+              <TextBlock Text="VIEW MODE · " Foreground="{DynamicResource MutedTextBrush}" FontSize="11"/>
+              <TextBlock Text="{Binding ViewModeLabel}" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" FontSize="11"/>
+            </StackPanel>
+          </Border>
+          <Button Content="⟳  Refresh Data" Margin="0,0,0,8" HorizontalAlignment="Stretch" Command="{Binding RefreshCommand}"/>
+          <Button Content="⚙  Settings" HorizontalAlignment="Stretch" Command="{Binding OpenSettingsCommand}"
+                  Classes.active="{Binding IsSettingsActive}"
+                  ToolTip.Tip="Theme and difficulty mode (Beginner / Intermediate / Pro)."/>
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <Grid Grid.Column="1">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+      </Grid.RowDefinitions>
+
+      <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
+              BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="0,0,0,1" Padding="24,18"
+              ZIndex="1" BoxShadow="0 2 10 0 #26000000">
+        <TextBlock Text="{Binding HeaderText}" FontSize="22" FontWeight="Bold"
+                   Foreground="{DynamicResource PrimaryBrush}"/>
+      </Border>
+
+      <ScrollViewer x:Name="ContentScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <ContentControl Content="{Binding CurrentPage}" Margin="24"/>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</Window>
