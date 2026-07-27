@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantHub.Desktop", "QuantHu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantHub.Desktop.Tests", "QuantHub.Desktop.Tests\QuantHub.Desktop.Tests.csproj", "{8AA71851-4BB6-42CD-AA48-D5A6EC22BE11}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantHub.Desktop.Avalonia", "QuantHub.Desktop.Avalonia\QuantHub.Desktop.Avalonia.csproj", "{7FE0BC9B-7406-4C66-9A65-5B8FE77B319C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{8AA71851-4BB6-42CD-AA48-D5A6EC22BE11}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8AA71851-4BB6-42CD-AA48-D5A6EC22BE11}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8AA71851-4BB6-42CD-AA48-D5A6EC22BE11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7FE0BC9B-7406-4C66-9A65-5B8FE77B319C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7FE0BC9B-7406-4C66-9A65-5B8FE77B319C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7FE0BC9B-7406-4C66-9A65-5B8FE77B319C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7FE0BC9B-7406-4C66-9A65-5B8FE77B319C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
