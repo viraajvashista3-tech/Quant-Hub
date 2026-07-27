@@ -1,0 +1,387 @@
+﻿<Application x:Class="QuantHub.Desktop.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vmp="clr-namespace:QuantHub.Desktop.ViewModels.Pages"
+             xmlns:viewsp="clr-namespace:QuantHub.Desktop.Views.Pages"
+             xmlns:conv="clr-namespace:QuantHub.Desktop.Converters">
+    <Application.Resources>
+        <ResourceDictionary>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            <conv:NullOrEmptyToVisibilityConverter x:Key="NotEmptyToVis"/>
+            <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis"/>
+            <conv:SignalToBrushConverter x:Key="SignalToBrush"/>
+            <conv:VerdictToBrushConverter x:Key="VerdictToBrush"/>
+            <conv:NewsSentimentToBrushConverter x:Key="NewsSentimentToBrush"/>
+            <conv:VerdictToIconConverter x:Key="VerdictToIcon"/>
+            <conv:SignToBrushConverter x:Key="SignToBrush"/>
+            <conv:TransactionTypeToBrushConverter x:Key="TransactionTypeToBrush"/>
+            <conv:IsEqualConverter x:Key="IsEqual"/>
+
+            <!-- Dark terminal palette. Accent brushes (Primary/Ring) are swapped at runtime by the
+                 settings panel in a later phase via Application.Current.Resources[key] = ... -
+                 kept as DynamicResource-friendly SolidColorBrush entries for that reason. -->
+            <SolidColorBrush x:Key="BackgroundBrush" Color="#0A0B10"/>
+            <SolidColorBrush x:Key="SurfaceBrush" Color="#0F1117"/>
+            <SolidColorBrush x:Key="PanelBorderBrush" Color="#2A2F3A"/>
+            <SolidColorBrush x:Key="TextBrush" Color="#E6E8EC"/>
+            <SolidColorBrush x:Key="MutedTextBrush" Color="#8B93A1"/>
+            <SolidColorBrush x:Key="PrimaryBrush" Color="#00BFFF"/>
+            <SolidColorBrush x:Key="PositiveBrush" Color="#10B981"/>
+            <SolidColorBrush x:Key="DestructiveBrush" Color="#EF4444"/>
+            <SolidColorBrush x:Key="WarningBrush" Color="#F59E0B"/>
+
+            <!-- Safety-net default so every plain TextBlock (no explicit Foreground/Style) follows the
+                 active theme instead of falling back to WPF's default black - without this, black text
+                 on the dark-theme's navy surfaces is unreadable. Named styles like CardTitleStyle below
+                 replace this outright (WPF doesn't merge an implicit style into a keyed one), so they
+                 still control their own Foreground independently. -->
+            <Style TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            </Style>
+
+            <!-- Subtle elevation so cards read as "lifted" panels instead of flat colored rectangles -
+                 DropShadowEffect is Freezable, so one frozen instance is safe to share via StaticResource
+                 across every card on a page without WPF cloning it per-element. -->
+            <DropShadowEffect x:Key="CardShadowEffect" Color="#000000" Direction="270" ShadowDepth="3" BlurRadius="16" Opacity="0.22"/>
+
+            <Style x:Key="CardStyle" TargetType="Border">
+                <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="14"/>
+                <Setter Property="Padding" Value="20"/>
+                <Setter Property="Margin" Value="0,0,0,16"/>
+                <Setter Property="Effect" Value="{StaticResource CardShadowEffect}"/>
+            </Style>
+
+            <Style x:Key="ProCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+                <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}"/>
+            </Style>
+
+            <!-- Uppercase, muted, letter-spaced-feeling section headers (PRICE HISTORY & MA / KEY
+                 METRICS / RECENT NEWS style) - callers pass already-uppercase literal text. -->
+            <Style x:Key="CardTitleStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}"/>
+                <Setter Property="Margin" Value="0,0,0,16"/>
+                <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+            </Style>
+
+            <!-- Beginner-mode headers stay in friendly sentence case, unlike the terminal-style
+                 uppercase CardTitleStyle used everywhere else. -->
+            <Style x:Key="FriendlyCardTitleStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                <Setter Property="Margin" Value="0,0,0,12"/>
+            </Style>
+
+            <Style x:Key="ChipStyle" TargetType="Border">
+                <Setter Property="CornerRadius" Value="10"/>
+                <Setter Property="Padding" Value="10,4"/>
+                <Setter Property="Background" Value="{DynamicResource PositiveBrush}"/>
+            </Style>
+
+            <Style x:Key="ChipTextStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Foreground" Value="White"/>
+            </Style>
+
+            <!-- Rounded status pill (signal/consensus/net-sentiment badges) - replaces the old
+                 sharp-cornered rectangles, which looked out of place next to every other rounded
+                 surface in the app. Callers set Background locally (SignalToBrush/ConsensusBrush/etc). -->
+            <Style x:Key="StatusBadgeStyle" TargetType="Border">
+                <Setter Property="CornerRadius" Value="8"/>
+                <Setter Property="Padding" Value="14,7"/>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="2" BlurRadius="8" Opacity="0.3"/>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="Hyperlink">
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                <Setter Property="TextDecorations" Value="{x:Null}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="TextDecorations" Value="Underline"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style x:Key="MonoValueStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="Consolas"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            </Style>
+
+            <Style x:Key="SectionLabelStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}"/>
+            </Style>
+
+            <Style TargetType="Button">
+                <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="14,8"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="10">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PanelBorderBrush}"/>
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Opacity" Value="0.8"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Accent-filled CTA button (AI chat Send, etc.) - own template rather than BasedOn the
+                 ghost Button style above, because that style's hover trigger hardcodes PanelBorderBrush,
+                 which would flip a colored fill to dark gray on hover instead of just dimming it. -->
+            <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="18,9"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="10">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Opacity" Value="0.75"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Matches the Button style above so toggles (e.g. the Bollinger Bands switch) don't
+                 fall back to WPF's raw classic-gray chrome, which would otherwise be the one
+                 conspicuously dated control left next to every other restyled element. -->
+            <Style TargetType="ToggleButton">
+                <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="12,7"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="8">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Thin flat progress bar (Quant Score Breakdown) - PART_Track/PART_Indicator are the
+                 names ProgressBar's own control logic looks for to auto-size the fill; naming them
+                 anything else silently breaks the Value/Maximum sizing. -->
+            <Style TargetType="ProgressBar">
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource PanelBorderBrush}"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ProgressBar">
+                            <Border Background="{TemplateBinding Background}" CornerRadius="3">
+                                <Grid x:Name="PART_Track" ClipToBounds="True">
+                                    <Rectangle x:Name="PART_Indicator" Fill="{TemplateBinding Foreground}"
+                                               HorizontalAlignment="Left" RadiusX="3" RadiusY="3"/>
+                                </Grid>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="TextBox">
+                <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                <Setter Property="CaretBrush" Value="{DynamicResource PrimaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="8,6"/>
+                <Setter Property="FontFamily" Value="Consolas"/>
+                <Setter Property="CharacterCasing" Value="Upper"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TextBox">
+                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="10">
+                                <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="ListBoxItem">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                <Setter Property="Padding" Value="12,10"/>
+                <Setter Property="Margin" Value="0,0,0,2"/>
+                <Setter Property="FontWeight" Value="Medium"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderThickness="0" CornerRadius="10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border x:Name="AccentBar" Grid.Column="0" Background="{DynamicResource PrimaryBrush}"
+                                            CornerRadius="2" Margin="0,3" Opacity="0"/>
+                                    <ContentPresenter Grid.Column="1" Margin="{TemplateBinding Padding}"/>
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PanelBorderBrush}"/>
+                                    <Setter TargetName="AccentBar" Property="Opacity" Value="1"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#1A1E28"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Thin flat scrollbar (both orientations, applied implicitly to every ScrollViewer in the
+                 app) - the stock Windows scrollbar's chunky gray track and arrow buttons clash badly with
+                 the rest of this dark, minimal UI. -->
+            <Style x:Key="ModernScrollBarThumb" TargetType="Thumb">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Thumb">
+                            <Border Background="{DynamicResource PanelBorderBrush}" CornerRadius="4" Opacity="0.9"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="ScrollBar">
+                <Setter Property="Width" Value="10"/>
+                <Setter Property="Height" Value="10"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollBar">
+                            <Grid Background="Transparent">
+                                <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False" IsHitTestVisible="False"/>
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False" IsHitTestVisible="False"/>
+                                    </Track.IncreaseRepeatButton>
+                                    <Track.Thumb>
+                                        <Thumb Style="{StaticResource ModernScrollBarThumb}"/>
+                                    </Track.Thumb>
+                                </Track>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="Orientation" Value="Horizontal">
+                                    <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <DataTemplate DataType="{x:Type vmp:TerminalViewModel}">
+                <viewsp:TerminalView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vmp:UniverseViewModel}">
+                <viewsp:UniverseView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vmp:FundamentalsViewModel}">
+                <viewsp:FundamentalsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vmp:AnalystViewModel}">
+                <viewsp:AnalystView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vmp:PeersViewModel}">
+                <viewsp:PeersView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vmp:InsiderViewModel}">
+                <viewsp:InsiderView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vmp:MarketPulseViewModel}">
+                <viewsp:MarketPulseView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vmp:AiResearchViewModel}">
+                <viewsp:AiResearchView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vmp:ComingSoonViewModel}">
+                <viewsp:ComingSoonView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vmp:SettingsViewModel}">
+                <viewsp:SettingsView/>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

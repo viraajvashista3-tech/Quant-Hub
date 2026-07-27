@@ -1,0 +1,98 @@
+using System.Text.Json;
+using QuantHub.Core.Analysis;
+
+namespace QuantHub.Desktop.Tests;
+
+public class AnalystAnalyzerTests
+{
+    private static JsonElement Parse(string json) => JsonDocument.Parse(json).RootElement;
+
+    [Theory]
+    [InlineData("strong buy", "Strong Buy")]
+    [InlineData("STRONG BUY", "Strong Buy")]
+    [InlineData("underperform", "Underperform")]
+    public void TitleCase_MatchesPythonStrTitle(string input, string expected)
+    {
+        Assert.Equal(expected, AnalystAnalyzer.TitleCase(input));
+    }
+
+    [Fact]
+    public void Build_TitleCasesConsensusAndReadsTargets()
+    {
+        var result = Parse("""
+        {
+            "financialData": {
+                "recommendationKey": "strong_buy",
+                "numberOfAnalystOpinions": { "raw": 12 },
+                "currentPrice": { "raw": 150.5 },
+                "targetLowPrice": { "raw": 100 },
+                "targetMeanPrice": { "raw": 160 },
+                "targetHighPrice": { "raw": 200 }
+            }
+        }
+        """);
+
+        var analyst = AnalystAnalyzer.Build("test", result);
+
+        Assert.Equal("Strong Buy", analyst.ConsensusRating);
+        Assert.Equal(12, analyst.NumAnalysts);
+        Assert.Equal(150.5, analyst.CurrentPrice);
+        Assert.Equal(100, analyst.TargetLow);
+        Assert.Equal(160, analyst.TargetMean);
+        Assert.Equal(200, analyst.TargetHigh);
+    }
+
+    [Fact]
+    public void Build_MissingRecommendationKey_DefaultsToNA()
+    {
+        var result = Parse("{ \"financialData\": {} }");
+        var analyst = AnalystAnalyzer.Build("test", result);
+        Assert.Equal("N/A", analyst.ConsensusRating);
+    }
+
+    [Fact]
+    public void Build_RecommendationTrend_ZeroMonthPeriodStaysLiteral_NotCurrent()
+    {
+        // "0m" never starts with "-", so it falls to the else branch and keeps the literal
+        // string - the "Current" branch is dead code in the original and must stay that way.
+        var result = Parse("""
+        {
+            "recommendationTrend": {
+                "trend": [
+                    { "period": "0m", "strongBuy": 5, "buy": 10, "hold": 3, "sell": 0, "strongSell": 0 },
+                    { "period": "-1m", "strongBuy": 4, "buy": 9, "hold": 4, "sell": 1, "strongSell": 0 },
+                    { "period": "-2m", "strongBuy": 3, "buy": 8, "hold": 5, "sell": 1, "strongSell": 0 }
+                ]
+            }
+        }
+        """);
+
+        var analyst = AnalystAnalyzer.Build("test", result);
+
+        Assert.Equal("0m", analyst.RecommendationTrend![0].Period);
+        Assert.Equal("1mo ago", analyst.RecommendationTrend[1].Period);
+        Assert.Equal("2mo ago", analyst.RecommendationTrend[2].Period);
+    }
+
+    [Fact]
+    public void Build_UpgradeDowngradeHistory_ParsesFirmAndDate()
+    {
+        var result = Parse("""
+        {
+            "upgradeDowngradeHistory": {
+                "history": [
+                    { "epochGradeDate": 1700000000, "firm": "Morgan Stanley", "toGrade": "Overweight", "fromGrade": "Equal-Weight", "action": "up" }
+                ]
+            }
+        }
+        """);
+
+        var analyst = AnalystAnalyzer.Build("test", result);
+
+        var action = Assert.Single(analyst.RecentActions!);
+        Assert.Equal("Morgan Stanley", action.Firm);
+        Assert.Equal("Overweight", action.ToGrade);
+        Assert.Equal("up", action.Action);
+        Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(1700000000).UtcDateTime.ToString("yyyy-MM-dd"), action.Date);
+    }
+}

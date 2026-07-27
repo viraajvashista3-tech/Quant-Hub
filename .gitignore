@@ -11,6 +11,12 @@ out-tsc
 # dependencies
 node_modules
 
+# .NET build output (QuantHub.Core / QuantHub.Desktop / QuantHub.Desktop.Tests)
+bin/
+obj/
+publish/
+*.user
+
 # IDEs and editors
 /.idea
 .project

@@ -1,0 +1,101 @@
+<UserControl x:Class="QuantHub.Desktop.Views.Pages.AiResearchView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- API key missing state -->
+        <Border Grid.Row="0" Style="{StaticResource CardStyle}" VerticalAlignment="Top"
+                Visibility="{Binding HasApiKey, Converter={StaticResource InverseBoolToVis}}">
+            <StackPanel>
+                <TextBlock Text="Claude API key required" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource MutedTextBrush}"
+                           Text="Add your Claude API key on the Settings page (bottom-left) to start chatting with the AI Research assistant."/>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="0" Visibility="{Binding HasApiKey, Converter={StaticResource BoolToVis}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Empty state: suggested questions -->
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="560"
+                        Visibility="{Binding HasMessages, Converter={StaticResource InverseBoolToVis}}">
+                <TextBlock Text="🤖" FontSize="40" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                <TextBlock Text="Ask about the active ticker" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                <ItemsControl ItemsSource="{Binding SuggestedQuestions}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Content="{Binding}" Margin="0,0,0,8" Padding="14,10" HorizontalContentAlignment="Left"
+                                    Command="{Binding DataContext.AskSuggestedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <ScrollViewer x:Name="ChatScrollViewer" VerticalScrollBarVisibility="Auto"
+                          Visibility="{Binding HasMessages, Converter={StaticResource BoolToVis}}">
+                <ItemsControl ItemsSource="{Binding Messages}" Margin="0,0,0,8">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="14,10" Margin="0,0,0,12" MaxWidth="640">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Setter Property="HorizontalAlignment" Value="Left"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsUser}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter Property="BorderThickness" Value="0"/>
+                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding Text}" TextWrapping="Wrap">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsUser}" Value="True">
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+
+        <StackPanel Grid.Row="1" Margin="0,16,0,0" Visibility="{Binding HasApiKey, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DestructiveBrush}"
+                       Visibility="{Binding ErrorMessage, Converter={StaticResource NotEmptyToVis}}"
+                       Margin="0,0,0,8" TextWrapping="Wrap"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" Text="{Binding UserInput, UpdateSourceTrigger=PropertyChanged}"
+                         CharacterCasing="Normal" Padding="12,10" VerticalContentAlignment="Center"
+                         ToolTip="Ask a question about the active ticker">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Return" Command="{Binding SendCommand}"/>
+                    </TextBox.InputBindings>
+                </TextBox>
+                <Button Grid.Column="1" Content="Send" Style="{StaticResource PrimaryButtonStyle}" Margin="8,0,0,0" Command="{Binding SendCommand}"/>
+            </Grid>
+        </StackPanel>
+    </Grid>
+</UserControl>

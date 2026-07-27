@@ -1,0 +1,113 @@
+using System.Text.Json;
+using QuantHub.Core.Models;
+using QuantHub.Core.Yahoo;
+
+namespace QuantHub.Core.Analysis;
+
+/// <summary>Ports the analyst command (stock_data.py lines 516-588), including the consensus-rating
+/// title-casing and the recommendation-trend "0m" label quirk (the "Current" branch is dead code in
+/// the original since "0m" never starts with "-", and is preserved here rather than "fixed").
+///
+/// Yahoo's public upgradeDowngradeHistory payload does not reliably expose a price-target delta per
+/// action, so PriceTargetAction/CurrentPriceTarget/PriorPriceTarget are left null here - the schema
+/// already models them as optional/nullable for exactly this reason.</summary>
+public static class AnalystAnalyzer
+{
+    public static readonly string[] Modules = ["financialData", "recommendationTrend", "upgradeDowngradeHistory"];
+
+    public static AnalystData Build(string ticker, JsonElement result)
+    {
+        var recKeyRaw = YahooJson.Str(result, "financialData", "recommendationKey");
+        var consensus = string.IsNullOrEmpty(recKeyRaw) ? "N/A" : TitleCase(recKeyRaw.Replace('_', ' '));
+
+        var numAnalysts = YahooJson.Raw(result, "financialData", "numberOfAnalystOpinions");
+        var currentPrice = YahooJson.Raw(result, "financialData", "currentPrice");
+        var targetLow = YahooJson.Raw(result, "financialData", "targetLowPrice");
+        var targetMean = YahooJson.Raw(result, "financialData", "targetMeanPrice");
+        var targetHigh = YahooJson.Raw(result, "financialData", "targetHighPrice");
+
+        var recentActions = new List<AnalystAction>();
+        if (result.TryGetProperty("upgradeDowngradeHistory", out var udh) &&
+            udh.TryGetProperty("history", out var history) && history.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var row in history.EnumerateArray().Take(40))
+            {
+                string? date = null;
+                if (row.TryGetProperty("epochGradeDate", out var epoch) && epoch.ValueKind == JsonValueKind.Number)
+                {
+                    date = DateTimeOffset.FromUnixTimeSeconds(epoch.GetInt64()).UtcDateTime.ToString("yyyy-MM-dd");
+                }
+
+                recentActions.Add(new AnalystAction
+                {
+                    Firm = GetString(row, "firm") ?? "",
+                    ToGrade = NullIfEmpty(GetString(row, "toGrade")),
+                    FromGrade = NullIfEmpty(GetString(row, "fromGrade")),
+                    Date = date,
+                    Action = NullIfEmpty(GetString(row, "action")) ?? "reiterated",
+                    PriceTargetAction = null,
+                    CurrentPriceTarget = null,
+                    PriorPriceTarget = null
+                });
+            }
+        }
+
+        var trend = new List<RecommendationTrendPoint>();
+        if (result.TryGetProperty("recommendationTrend", out var rt) &&
+            rt.TryGetProperty("trend", out var trendArr) && trendArr.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var row in trendArr.EnumerateArray())
+            {
+                var periodRaw = GetString(row, "period") ?? "";
+                string label;
+                if (periodRaw.StartsWith('-'))
+                {
+                    var monthsAgo = int.TryParse(periodRaw.Replace("m", ""), out var m) ? m : 0;
+                    label = monthsAgo != 0 ? $"{Math.Abs(monthsAgo)}mo ago" : "Current";
+                }
+                else
+                {
+                    label = periodRaw;
+                }
+
+                trend.Add(new RecommendationTrendPoint
+                {
+                    Period = label,
+                    StrongBuy = GetInt(row, "strongBuy") ?? 0,
+                    Buy = GetInt(row, "buy") ?? 0,
+                    Hold = GetInt(row, "hold") ?? 0,
+                    Sell = GetInt(row, "sell") ?? 0,
+                    StrongSell = GetInt(row, "strongSell") ?? 0
+                });
+            }
+        }
+
+        return new AnalystData
+        {
+            Ticker = ticker.ToUpperInvariant(),
+            ConsensusRating = consensus,
+            NumAnalysts = numAnalysts is { } na ? (int)na : null,
+            CurrentPrice = currentPrice,
+            TargetLow = targetLow,
+            TargetMean = targetMean,
+            TargetHigh = targetHigh,
+            RecentActions = recentActions,
+            RecommendationTrend = trend
+        };
+    }
+
+    private static string? GetString(JsonElement el, string field) =>
+        el.TryGetProperty(field, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+
+    private static int? GetInt(JsonElement el, string field) =>
+        el.TryGetProperty(field, out var v) && v.ValueKind == JsonValueKind.Number ? v.GetInt32() : null;
+
+    private static string? NullIfEmpty(string? s) => string.IsNullOrEmpty(s) ? null : s;
+
+    /// <summary>Matches Python's str.title(): uppercase each word's first letter, lowercase the rest.</summary>
+    internal static string TitleCase(string s)
+    {
+        var words = s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join(" ", words.Select(w => char.ToUpperInvariant(w[0]) + w[1..].ToLowerInvariant()));
+    }
+}
