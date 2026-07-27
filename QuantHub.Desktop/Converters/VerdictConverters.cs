@@ -1,14 +1,13 @@
 using System.Globalization;
-using System.Windows;
-using System.Windows.Data;
-using System.Windows.Media;
+using Avalonia.Data.Converters;
+using QuantHub.Desktop.Theming;
 
 namespace QuantHub.Desktop.Converters;
 
 /// <summary>Maps a SignalReason.Verdict string ("Positive"/"Negative"/"Warning"/"Neutral") to a brush.</summary>
 public sealed class VerdictToBrushConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object parameter, CultureInfo culture)
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         var key = value as string switch
         {
@@ -17,10 +16,10 @@ public sealed class VerdictToBrushConverter : IValueConverter
             "Warning" => "WarningBrush",
             _ => "MutedTextBrush"
         };
-        return Application.Current.TryFindResource(key) as Brush ?? Brushes.Gray;
+        return ThemeResources.GetBrush(key);
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }
 
@@ -28,7 +27,7 @@ public sealed class VerdictToBrushConverter : IValueConverter
 /// CheckCircle (positive) / XCircle (negative) / AlertCircle (warning/neutral) treatment.</summary>
 public sealed class VerdictToIconConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object parameter, CultureInfo culture) => value as string switch
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value as string switch
     {
         "Positive" => "✅",
         "Negative" => "❌",
@@ -36,7 +35,7 @@ public sealed class VerdictToIconConverter : IValueConverter
         _ => "➖"
     };
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }
 
@@ -44,7 +43,7 @@ public sealed class VerdictToIconConverter : IValueConverter
 /// "Mildly Bearish"/"Bearish") to a brush for the news-sentiment badge chip.</summary>
 public sealed class NewsSentimentToBrushConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object parameter, CultureInfo culture)
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         var key = value as string switch
         {
@@ -52,10 +51,10 @@ public sealed class NewsSentimentToBrushConverter : IValueConverter
             "Bearish" or "Mildly Bearish" => "DestructiveBrush",
             _ => "MutedTextBrush"
         };
-        return Application.Current.TryFindResource(key) as Brush ?? Brushes.Gray;
+        return ThemeResources.GetBrush(key);
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }
 
@@ -63,7 +62,7 @@ public sealed class NewsSentimentToBrushConverter : IValueConverter
 /// "Option Exercise"/"Award/Grant"/"Unknown") to a brush for the insider transactions table.</summary>
 public sealed class TransactionTypeToBrushConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object parameter, CultureInfo culture)
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         var key = value as string switch
         {
@@ -71,17 +70,17 @@ public sealed class TransactionTypeToBrushConverter : IValueConverter
             "Sale" => "DestructiveBrush",
             _ => "MutedTextBrush"
         };
-        return Application.Current.TryFindResource(key) as Brush ?? Brushes.Gray;
+        return ThemeResources.GetBrush(key);
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }
 
 /// <summary>Maps a numeric score contribution to green (positive) / red (negative) / muted (zero).</summary>
 public sealed class SignToBrushConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object parameter, CultureInfo culture)
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         var d = value switch
         {
@@ -89,9 +88,9 @@ public sealed class SignToBrushConverter : IValueConverter
             _ => 0.0
         };
         var key = d > 0 ? "PositiveBrush" : d < 0 ? "DestructiveBrush" : "MutedTextBrush";
-        return Application.Current.TryFindResource(key) as Brush ?? Brushes.Gray;
+        return ThemeResources.GetBrush(key);
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }

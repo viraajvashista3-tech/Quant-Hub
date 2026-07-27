@@ -5,11 +5,9 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantHub.Core", "QuantHub.Core\QuantHub.Core.csproj", "{EEF48A0A-43B7-4861-ADDE-97EC61E4ED55}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantHub.Desktop", "QuantHub.Desktop\QuantHub.Desktop.csproj", "{8E3B1CDE-39B4-44B6-BC02-87728DB2B41D}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantHub.Desktop.Tests", "QuantHub.Desktop.Tests\QuantHub.Desktop.Tests.csproj", "{8AA71851-4BB6-42CD-AA48-D5A6EC22BE11}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantHub.Desktop.Avalonia", "QuantHub.Desktop.Avalonia\QuantHub.Desktop.Avalonia.csproj", "{7FE0BC9B-7406-4C66-9A65-5B8FE77B319C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantHub.Desktop", "QuantHub.Desktop\QuantHub.Desktop.csproj", "{C7CA7F22-B723-4A98-AC51-BF2C73848119}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,17 +22,13 @@ Global
 		{EEF48A0A-43B7-4861-ADDE-97EC61E4ED55}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EEF48A0A-43B7-4861-ADDE-97EC61E4ED55}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EEF48A0A-43B7-4861-ADDE-97EC61E4ED55}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8E3B1CDE-39B4-44B6-BC02-87728DB2B41D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8E3B1CDE-39B4-44B6-BC02-87728DB2B41D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8E3B1CDE-39B4-44B6-BC02-87728DB2B41D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8E3B1CDE-39B4-44B6-BC02-87728DB2B41D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8AA71851-4BB6-42CD-AA48-D5A6EC22BE11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8AA71851-4BB6-42CD-AA48-D5A6EC22BE11}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8AA71851-4BB6-42CD-AA48-D5A6EC22BE11}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8AA71851-4BB6-42CD-AA48-D5A6EC22BE11}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7FE0BC9B-7406-4C66-9A65-5B8FE77B319C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7FE0BC9B-7406-4C66-9A65-5B8FE77B319C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7FE0BC9B-7406-4C66-9A65-5B8FE77B319C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7FE0BC9B-7406-4C66-9A65-5B8FE77B319C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7CA7F22-B723-4A98-AC51-BF2C73848119}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7CA7F22-B723-4A98-AC51-BF2C73848119}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7CA7F22-B723-4A98-AC51-BF2C73848119}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7CA7F22-B723-4A98-AC51-BF2C73848119}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,10 +1,10 @@
-using System.Windows;
-using System.Windows.Media;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using QuantHub.Core.Models;
 using QuantHub.Core.Services;
 using QuantHub.Desktop.Services;
+using QuantHub.Desktop.Theming;
 
 namespace QuantHub.Desktop.ViewModels.Pages;
 
@@ -30,11 +30,11 @@ public sealed partial class InsiderViewModel : ObservableObject, IRefreshablePag
     public bool IsBeginner => _settings.ViewMode == ViewMode.Beginner;
     public bool IsIntermediatePlus => !IsBeginner;
 
-    public Brush SentimentBrush => Data?.NetSentiment switch
+    public IBrush SentimentBrush => Data?.NetSentiment switch
     {
-        "Net Buyers" => (Brush)Application.Current.Resources["PositiveBrush"],
-        "Net Sellers" => (Brush)Application.Current.Resources["DestructiveBrush"],
-        _ => (Brush)Application.Current.Resources["MutedTextBrush"]
+        "Net Buyers" => ThemeResources.GetBrush("PositiveBrush"),
+        "Net Sellers" => ThemeResources.GetBrush("DestructiveBrush"),
+        _ => ThemeResources.GetBrush("MutedTextBrush")
     };
 
     public string? BeginnerSummary

@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Windows;
-using System.Windows.Media;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiveChartsCore;
@@ -9,6 +8,7 @@ using LiveChartsCore.SkiaSharpView.Painting;
 using QuantHub.Core.Models;
 using QuantHub.Core.Services;
 using QuantHub.Desktop.Services;
+using QuantHub.Desktop.Theming;
 using SkiaSharp;
 
 namespace QuantHub.Desktop.ViewModels.Pages;
@@ -40,12 +40,12 @@ public sealed partial class AnalystViewModel : ObservableObject, IRefreshablePag
     public bool IsBeginner => _settings.ViewMode == ViewMode.Beginner;
     public bool IsIntermediatePlus => !IsBeginner;
 
-    public Brush ConsensusBrush => Data?.ConsensusRating switch
+    public IBrush ConsensusBrush => Data?.ConsensusRating switch
     {
-        "Strong Buy" or "Buy" => (Brush)Application.Current.Resources["PositiveBrush"],
-        "Hold" => (Brush)Application.Current.Resources["WarningBrush"],
-        "Sell" or "Strong Sell" => (Brush)Application.Current.Resources["DestructiveBrush"],
-        _ => (Brush)Application.Current.Resources["MutedTextBrush"]
+        "Strong Buy" or "Buy" => ThemeResources.GetBrush("PositiveBrush"),
+        "Hold" => ThemeResources.GetBrush("WarningBrush"),
+        "Sell" or "Strong Sell" => ThemeResources.GetBrush("DestructiveBrush"),
+        _ => ThemeResources.GetBrush("MutedTextBrush")
     };
 
     /// <summary>Plain-English framing for Beginner: consensus + price target expressed as upside/
@@ -182,9 +182,6 @@ public sealed partial class AnalystViewModel : ObservableObject, IRefreshablePag
         };
     }
 
-    private const string AxisLabelColor = "#8B93A1";
-    private const string AxisSeparatorColor = "#2A2F3A";
-
     private void BuildTrendChart(IReadOnlyList<RecommendationTrendPoint>? trend)
     {
         TrendSeries.Clear();
@@ -198,33 +195,33 @@ public sealed partial class AnalystViewModel : ObservableObject, IRefreshablePag
         var ordered = trend.Reverse().ToList();
         var labels = ordered.Select(t => t.Period).ToArray();
 
-        TrendSeries.Add(StackedColumn(ordered.Select(t => (double)(t.StrongSell ?? 0)).ToArray(), "Strong Sell", "#EF4444"));
-        TrendSeries.Add(StackedColumn(ordered.Select(t => (double)(t.Sell ?? 0)).ToArray(), "Sell", "#F97316"));
-        TrendSeries.Add(StackedColumn(ordered.Select(t => (double)(t.Hold ?? 0)).ToArray(), "Hold", "#F59E0B"));
-        TrendSeries.Add(StackedColumn(ordered.Select(t => (double)(t.Buy ?? 0)).ToArray(), "Buy", "#22C55E"));
-        TrendSeries.Add(StackedColumn(ordered.Select(t => (double)(t.StrongBuy ?? 0)).ToArray(), "Strong Buy", "#10B981"));
+        TrendSeries.Add(StackedColumn(ordered.Select(t => (double)(t.StrongSell ?? 0)).ToArray(), "Strong Sell", ChartPalette.Destructive));
+        TrendSeries.Add(StackedColumn(ordered.Select(t => (double)(t.Sell ?? 0)).ToArray(), "Sell", ChartPalette.Downgrade));
+        TrendSeries.Add(StackedColumn(ordered.Select(t => (double)(t.Hold ?? 0)).ToArray(), "Hold", ChartPalette.Warning));
+        TrendSeries.Add(StackedColumn(ordered.Select(t => (double)(t.Buy ?? 0)).ToArray(), "Buy", ChartPalette.Upgrade));
+        TrendSeries.Add(StackedColumn(ordered.Select(t => (double)(t.StrongBuy ?? 0)).ToArray(), "Strong Buy", ChartPalette.Positive));
 
         TrendXAxes.Add(new Axis
         {
             Labels = labels,
-            LabelsPaint = new SolidColorPaint(SKColor.Parse(AxisLabelColor)),
-            SeparatorsPaint = new SolidColorPaint(SKColor.Parse(AxisSeparatorColor)) { StrokeThickness = 1 },
+            LabelsPaint = new SolidColorPaint(ChartPalette.AxisText),
+            SeparatorsPaint = new SolidColorPaint(ChartPalette.AxisLine) { StrokeThickness = 1 },
             TextSize = 11
         });
         TrendYAxes.Add(new Axis
         {
-            LabelsPaint = new SolidColorPaint(SKColor.Parse(AxisLabelColor)),
-            SeparatorsPaint = new SolidColorPaint(SKColor.Parse(AxisSeparatorColor)) { StrokeThickness = 1 },
+            LabelsPaint = new SolidColorPaint(ChartPalette.AxisText),
+            SeparatorsPaint = new SolidColorPaint(ChartPalette.AxisLine) { StrokeThickness = 1 },
             TextSize = 11,
             MinLimit = 0
         });
     }
 
-    private static StackedColumnSeries<double> StackedColumn(double[] values, string name, string hex) => new()
+    private static StackedColumnSeries<double> StackedColumn(double[] values, string name, SKColor color) => new()
     {
         Values = values,
         Name = name,
-        Fill = new SolidColorPaint(SKColor.Parse(hex)),
+        Fill = new SolidColorPaint(color),
         Stroke = null
     };
 }

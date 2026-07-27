@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Windows;
-using System.Windows.Media;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiveChartsCore;
@@ -9,6 +8,7 @@ using LiveChartsCore.SkiaSharpView.Painting;
 using QuantHub.Core.MarketPulse;
 using QuantHub.Core.Models;
 using QuantHub.Desktop.Services;
+using QuantHub.Desktop.Theming;
 using SkiaSharp;
 
 namespace QuantHub.Desktop.ViewModels.Pages;
@@ -44,11 +44,11 @@ public sealed partial class MarketPulseViewModel : ObservableObject, IRefreshabl
     public bool IsBeginner => _settings.ViewMode == ViewMode.Beginner;
     public bool IsIntermediatePlus => !IsBeginner;
 
-    public Brush MoodBrush => Data?.MarketMood switch
+    public IBrush MoodBrush => Data?.MarketMood switch
     {
-        "Extreme Fear" or "Fear" => (Brush)Application.Current.Resources["DestructiveBrush"],
-        "Greed" or "Extreme Greed" => (Brush)Application.Current.Resources["PositiveBrush"],
-        _ => (Brush)Application.Current.Resources["WarningBrush"]
+        "Extreme Fear" or "Fear" => ThemeResources.GetBrush("DestructiveBrush"),
+        "Greed" or "Extreme Greed" => ThemeResources.GetBrush("PositiveBrush"),
+        _ => ThemeResources.GetBrush("WarningBrush")
     };
 
     public string? BeginnerSummary
@@ -130,9 +130,6 @@ public sealed partial class MarketPulseViewModel : ObservableObject, IRefreshabl
             .ToList();
     }
 
-    private const string AxisLabelColor = "#8B93A1";
-    private const string AxisSeparatorColor = "#2A2F3A";
-
     private void BuildSectorChart(IReadOnlyList<MarketPulseItem> sectors)
     {
         SectorSeries.Clear();
@@ -148,16 +145,16 @@ public sealed partial class MarketPulseViewModel : ObservableObject, IRefreshabl
 
         SectorXAxes.Add(new Axis
         {
-            LabelsPaint = new SolidColorPaint(SKColor.Parse(AxisLabelColor)),
-            SeparatorsPaint = new SolidColorPaint(SKColor.Parse(AxisSeparatorColor)) { StrokeThickness = 1 },
+            LabelsPaint = new SolidColorPaint(ChartPalette.AxisText),
+            SeparatorsPaint = new SolidColorPaint(ChartPalette.AxisLine) { StrokeThickness = 1 },
             TextSize = 11,
             Labeler = v => $"{v:0.0}%"
         });
         SectorYAxes.Add(new Axis
         {
             Labels = labels,
-            LabelsPaint = new SolidColorPaint(SKColor.Parse(AxisLabelColor)),
-            SeparatorsPaint = new SolidColorPaint(SKColor.Parse(AxisSeparatorColor)) { StrokeThickness = 1 },
+            LabelsPaint = new SolidColorPaint(ChartPalette.AxisText),
+            SeparatorsPaint = new SolidColorPaint(ChartPalette.AxisLine) { StrokeThickness = 1 },
             TextSize = 11
         });
 
@@ -167,11 +164,11 @@ public sealed partial class MarketPulseViewModel : ObservableObject, IRefreshabl
         {
             var row = new double?[ordered.Count];
             row[i] = values[i];
-            var hex = values[i] >= 0 ? "#10B981" : "#EF4444";
+            var color = values[i] >= 0 ? ChartPalette.Positive : ChartPalette.Destructive;
             SectorSeries.Add(new RowSeries<double?>
             {
                 Values = row,
-                Fill = new SolidColorPaint(SKColor.Parse(hex)),
+                Fill = new SolidColorPaint(color),
                 Stroke = null,
                 MaxBarWidth = 18
             });

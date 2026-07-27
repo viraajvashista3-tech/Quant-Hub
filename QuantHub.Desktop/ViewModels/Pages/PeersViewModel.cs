@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
-using System.Windows.Media;
+using Avalonia.Controls;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -10,13 +11,14 @@ using QuantHub.Core.Models;
 using QuantHub.Core.Services;
 using QuantHub.Desktop.Messages;
 using QuantHub.Desktop.Services;
+using QuantHub.Desktop.Theming;
 using SkiaSharp;
 
 namespace QuantHub.Desktop.ViewModels.Pages;
 
 public sealed record PeerRow(PeerStock Stock, bool IsSubject);
 
-public sealed record CorrelationCell(string Ticker, double? Value, string Display, Brush Background);
+public sealed record CorrelationCell(string Ticker, double? Value, string Display, IBrush Background);
 
 public sealed record CorrelationRow(string Ticker, IReadOnlyList<CorrelationCell> Cells);
 
@@ -121,9 +123,6 @@ public sealed partial class PeersViewModel : ObservableObject, IRefreshablePage
         }
     }
 
-    private const string AxisLabelColor = "#8B93A1";
-    private const string AxisSeparatorColor = "#2A2F3A";
-
     /// <summary>P/E is the one valuation metric almost every peer reports, so it doubles as the
     /// default "how does this stock compare" visual - one bar per company, subject picked out in
     /// the accent color so it reads at a glance against the muted peer bars.</summary>
@@ -140,12 +139,12 @@ public sealed partial class PeersViewModel : ObservableObject, IRefreshablePage
         {
             var values = new double?[rows.Count];
             values[i] = rows[i].Stock.Pe;
-            var hex = rows[i].IsSubject ? "#00BFFF" : "#8B93A1";
+            var color = rows[i].IsSubject ? ChartPalette.Primary : ChartPalette.AxisText;
             ComparisonSeries.Add(new ColumnSeries<double?>
             {
                 Values = values,
                 Name = rows[i].Stock.Ticker,
-                Fill = new SolidColorPaint(SKColor.Parse(hex)),
+                Fill = new SolidColorPaint(color),
                 Stroke = null,
                 MaxBarWidth = 46
             });
@@ -154,14 +153,14 @@ public sealed partial class PeersViewModel : ObservableObject, IRefreshablePage
         ComparisonXAxes.Add(new Axis
         {
             Labels = labels,
-            LabelsPaint = new SolidColorPaint(SKColor.Parse(AxisLabelColor)),
-            SeparatorsPaint = new SolidColorPaint(SKColor.Parse(AxisSeparatorColor)) { StrokeThickness = 1 },
+            LabelsPaint = new SolidColorPaint(ChartPalette.AxisText),
+            SeparatorsPaint = new SolidColorPaint(ChartPalette.AxisLine) { StrokeThickness = 1 },
             TextSize = 11
         });
         ComparisonYAxes.Add(new Axis
         {
-            LabelsPaint = new SolidColorPaint(SKColor.Parse(AxisLabelColor)),
-            SeparatorsPaint = new SolidColorPaint(SKColor.Parse(AxisSeparatorColor)) { StrokeThickness = 1 },
+            LabelsPaint = new SolidColorPaint(ChartPalette.AxisText),
+            SeparatorsPaint = new SolidColorPaint(ChartPalette.AxisLine) { StrokeThickness = 1 },
             TextSize = 11,
             Labeler = v => $"{v:0.0}x",
             MinLimit = 0
@@ -188,16 +187,17 @@ public sealed partial class PeersViewModel : ObservableObject, IRefreshablePage
         CorrelationRows = rows;
     }
 
-    private static readonly Color Positive = (Color)ColorConverter.ConvertFromString("#10B981");
-    private static readonly Color Negative = (Color)ColorConverter.ConvertFromString("#EF4444");
-    private static readonly Color Neutral = (Color)ColorConverter.ConvertFromString("#2A2F3A");
+    /// <summary>Resolves the live value of an Avalonia brush resource each call (rather than caching
+    /// once), so the heatmap's interpolated colors stay correct if the theme changes.</summary>
+    private static Color ResolveColor(string key) => ThemeResources.GetColor(key);
 
-    private static Brush CorrelationColor(double? value)
+    private static IBrush CorrelationColor(double? value)
     {
-        if (value is not { } v) return new SolidColorBrush(Neutral);
+        var neutral = ResolveColor("PanelBorderBrush");
+        if (value is not { } v) return new SolidColorBrush(neutral);
         var t = Math.Clamp(Math.Abs(v), 0, 1);
-        var target = v >= 0 ? Positive : Negative;
-        return new SolidColorBrush(Lerp(Neutral, target, t));
+        var target = v >= 0 ? ResolveColor("PositiveBrush") : ResolveColor("DestructiveBrush");
+        return new SolidColorBrush(Lerp(neutral, target, t));
     }
 
     private static Color Lerp(Color a, Color b, double t) => Color.FromRgb(

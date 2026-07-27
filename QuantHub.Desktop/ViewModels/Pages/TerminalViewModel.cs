@@ -8,6 +8,7 @@ using LiveChartsCore.SkiaSharpView.Painting;
 using QuantHub.Core.Models;
 using QuantHub.Core.Services;
 using QuantHub.Desktop.Services;
+using QuantHub.Desktop.Theming;
 using SkiaSharp;
 
 namespace QuantHub.Desktop.ViewModels.Pages;
@@ -221,9 +222,6 @@ public sealed partial class TerminalViewModel : ObservableObject, IRefreshablePa
         }
     }
 
-    private const string AxisLabelColor = "#8B93A1";
-    private const string AxisSeparatorColor = "#2A2F3A";
-
     private void BuildCharts(StockHistory? history)
     {
         PriceSeries.Clear();
@@ -246,15 +244,15 @@ public sealed partial class TerminalViewModel : ObservableObject, IRefreshablePa
 
         var legend = new List<LegendItem> { new("#00BFFF", "Price"), new("#F59E0B", "MA50"), new("#8B5CF6", "MA200") };
 
-        PriceSeries.Add(LineOf(Column(b => b.Close), "Price", "#00BFFF", 2));
-        PriceSeries.Add(LineOf(Column(b => b.Ma50), "MA50", "#F59E0B", 1));
-        PriceSeries.Add(LineOf(Column(b => b.Ma200), "MA200", "#8B5CF6", 1));
+        PriceSeries.Add(LineOf(Column(b => b.Close), "Price", ChartPalette.Primary, 2));
+        PriceSeries.Add(LineOf(Column(b => b.Ma50), "MA50", ChartPalette.Warning, 1));
+        PriceSeries.Add(LineOf(Column(b => b.Ma200), "MA200", ChartPalette.ChartAccent2, 1));
 
         if (IsPro && ShowBollingerBands)
         {
-            PriceSeries.Add(LineOf(Column(b => b.BbUpper), "BB Upper", "#6366F1", 1));
-            PriceSeries.Add(LineOf(Column(b => b.BbLower), "BB Lower", "#6366F1", 1));
-            PriceSeries.Add(LineOf(Column(b => b.BbMa20), "BB Mid", "#6366F1", 1));
+            PriceSeries.Add(LineOf(Column(b => b.BbUpper), "BB Upper", ChartPalette.ChartAccent3, 1));
+            PriceSeries.Add(LineOf(Column(b => b.BbLower), "BB Lower", ChartPalette.ChartAccent3, 1));
+            PriceSeries.Add(LineOf(Column(b => b.BbMa20), "BB Mid", ChartPalette.ChartAccent3, 1));
             legend.Add(new LegendItem("#6366F1", "Bollinger Bands"));
         }
 
@@ -264,9 +262,9 @@ public sealed partial class TerminalViewModel : ObservableObject, IRefreshablePa
         PriceYAxes.Add(NumericAxis(labeler: v => "$" + v.ToString("0")));
 
         var rsi = Column(b => b.Rsi);
-        RsiSeries.Add(LineOf(Enumerable.Repeat((double?)70.0, bars.Count).ToArray(), "Overbought (70)", "#EF4444", 1));
-        RsiSeries.Add(LineOf(Enumerable.Repeat((double?)30.0, bars.Count).ToArray(), "Oversold (30)", "#10B981", 1));
-        RsiSeries.Add(LineOf(rsi, "RSI", "#22D3EE", 2, fillHex: "#2622D3EE"));
+        RsiSeries.Add(LineOf(Enumerable.Repeat((double?)70.0, bars.Count).ToArray(), "Overbought (70)", ChartPalette.Destructive, 1));
+        RsiSeries.Add(LineOf(Enumerable.Repeat((double?)30.0, bars.Count).ToArray(), "Oversold (30)", ChartPalette.Positive, 1));
+        RsiSeries.Add(LineOf(rsi, "RSI", SKColor.Parse("#22D3EE"), 2, fill: SKColor.Parse("#2622D3EE")));
 
         RsiXAxes.Add(TextAxis(thinnedLabels));
         RsiYAxes.Add(NumericAxis(min: 0, max: 100));
@@ -293,8 +291,8 @@ public sealed partial class TerminalViewModel : ObservableObject, IRefreshablePa
     private static Axis TextAxis(string[] labels) => new()
     {
         Labels = labels,
-        LabelsPaint = new SolidColorPaint(SKColor.Parse(AxisLabelColor)),
-        SeparatorsPaint = new SolidColorPaint(SKColor.Parse(AxisSeparatorColor)) { StrokeThickness = 1 },
+        LabelsPaint = new SolidColorPaint(ChartPalette.AxisText),
+        SeparatorsPaint = new SolidColorPaint(ChartPalette.AxisLine) { StrokeThickness = 1 },
         TextSize = 11
     };
 
@@ -302,8 +300,8 @@ public sealed partial class TerminalViewModel : ObservableObject, IRefreshablePa
     {
         var axis = new Axis
         {
-            LabelsPaint = new SolidColorPaint(SKColor.Parse(AxisLabelColor)),
-            SeparatorsPaint = new SolidColorPaint(SKColor.Parse(AxisSeparatorColor)) { StrokeThickness = 1 },
+            LabelsPaint = new SolidColorPaint(ChartPalette.AxisText),
+            SeparatorsPaint = new SolidColorPaint(ChartPalette.AxisLine) { StrokeThickness = 1 },
             TextSize = 11
         };
         if (min is { } mn) axis.MinLimit = mn;
@@ -312,12 +310,12 @@ public sealed partial class TerminalViewModel : ObservableObject, IRefreshablePa
         return axis;
     }
 
-    private static LineSeries<double?> LineOf(double?[] values, string name, string hex, double thickness, string? fillHex = null) => new()
+    private static LineSeries<double?> LineOf(double?[] values, string name, SKColor color, double thickness, SKColor? fill = null) => new()
     {
         Values = values,
         Name = name,
-        Stroke = new SolidColorPaint(SKColor.Parse(hex), (float)thickness),
-        Fill = fillHex is null ? null : new SolidColorPaint(SKColor.Parse(fillHex)),
+        Stroke = new SolidColorPaint(color, (float)thickness),
+        Fill = fill is { } f ? new SolidColorPaint(f) : null,
         GeometryStroke = null,
         GeometryFill = null,
         LineSmoothness = 0

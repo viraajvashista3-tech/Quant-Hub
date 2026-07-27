@@ -1,8 +1,10 @@
 using System.IO;
 using System.Text.Json;
-using System.Windows;
-using System.Windows.Media;
+using Avalonia;
+using Avalonia.Media;
+using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
+using FluentAvalonia.Styling;
 
 namespace QuantHub.Desktop.Services;
 
@@ -48,24 +50,6 @@ public sealed partial class SettingsService : ObservableObject
         new AccentColor("blue", "210 90% 55%", "Blue")
     ];
 
-    private static readonly Dictionary<string, string> DarkPalette = new()
-    {
-        ["BackgroundBrush"] = "#0A0B10",
-        ["SurfaceBrush"] = "#0F1117",
-        ["PanelBorderBrush"] = "#2A2F3A",
-        ["TextBrush"] = "#E6E8EC",
-        ["MutedTextBrush"] = "#8B93A1"
-    };
-
-    private static readonly Dictionary<string, string> LightPalette = new()
-    {
-        ["BackgroundBrush"] = "#F3F4F6",
-        ["SurfaceBrush"] = "#FFFFFF",
-        ["PanelBorderBrush"] = "#E2E5EA",
-        ["TextBrush"] = "#15171C",
-        ["MutedTextBrush"] = "#6B7280"
-    };
-
     private readonly string _path;
 
     [ObservableProperty]
@@ -102,14 +86,29 @@ public sealed partial class SettingsService : ObservableObject
 
     partial void OnClaudeApiKeyChanged(string value) => Save();
 
-    /// <summary>Swaps the surface/text brushes application-wide. Call once at startup after the
-    /// window is constructed, and automatically again whenever Theme changes.</summary>
+    /// <summary>Swaps the app's theme variant - Avalonia re-resolves every DynamicResource /
+    /// ThemeDictionaries lookup (Colors.axaml) automatically from this one property, and
+    /// FluentAvalonia's own control chrome follows the same variant. Call once at startup after the
+    /// Application is constructed, and automatically again whenever Theme changes.</summary>
     public void ApplyTheme()
     {
-        var palette = Theme == AppTheme.Dark ? DarkPalette : LightPalette;
-        foreach (var (key, hex) in palette)
+        Application.Current!.RequestedThemeVariant =
+            Theme == AppTheme.Dark ? ThemeVariant.Dark : ThemeVariant.Light;
+        ApplyAccent();
+    }
+
+    /// <summary>Applies the currently-selected accent to both the app's own PrimaryBrush resource
+    /// and FluentAvalonia's native accent ramp, so any FluentAvalonia-supplied chrome not
+    /// explicitly re-skinned by the app's own styles still follows the same accent color. Re-applied
+    /// on every theme swap too, so switching Dark/Light never resets the chosen accent.</summary>
+    public void ApplyAccent()
+    {
+        var color = ParseHsl(GetAccent().Hsl);
+        Application.Current!.Resources["PrimaryBrush"] = new SolidColorBrush(color);
+
+        if (Application.Current!.Styles.OfType<FluentAvaloniaTheme>().FirstOrDefault() is { } fluentTheme)
         {
-            Application.Current.Resources[key] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
+            fluentTheme.CustomAccentColor = color;
         }
     }
 
@@ -152,5 +151,39 @@ public sealed partial class SettingsService : ObservableObject
     public void CycleViewMode()
     {
         ViewMode = (ViewMode)(((int)ViewMode + 1) % 3);
+    }
+
+    /// <summary>Parses the "H S% L%" HSL triples AccentColors is defined in (e.g. "190 100% 50%")
+    /// into an Avalonia Color - avoids needing a second, RGB-hex copy of the same six accents.</summary>
+    private static Color ParseHsl(string hsl)
+    {
+        var parts = hsl.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var h = double.Parse(parts[0]);
+        var s = double.Parse(parts[1].TrimEnd('%')) / 100.0;
+        var l = double.Parse(parts[2].TrimEnd('%')) / 100.0;
+
+        if (s == 0)
+        {
+            var gray = (byte)Math.Round(l * 255);
+            return Color.FromRgb(gray, gray, gray);
+        }
+
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        var hk = h / 360.0;
+        var r = HueToRgb(p, q, hk + 1.0 / 3);
+        var g = HueToRgb(p, q, hk);
+        var b = HueToRgb(p, q, hk - 1.0 / 3);
+        return Color.FromRgb((byte)Math.Round(r * 255), (byte)Math.Round(g * 255), (byte)Math.Round(b * 255));
+    }
+
+    private static double HueToRgb(double p, double q, double t)
+    {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1.0 / 6) return p + (q - p) * 6 * t;
+        if (t < 1.0 / 2) return q;
+        if (t < 2.0 / 3) return p + (q - p) * (2.0 / 3 - t) * 6;
+        return p;
     }
 }
