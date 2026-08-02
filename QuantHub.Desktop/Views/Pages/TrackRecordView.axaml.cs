@@ -3,9 +3,9 @@ using Avalonia.Markup.Xaml;
 
 namespace QuantHub.Desktop.Views.Pages;
 
-public partial class ComingSoonView : UserControl
+public partial class TrackRecordView : UserControl
 {
-    public ComingSoonView()
+    public TrackRecordView()
     {
         AvaloniaXamlLoader.Load(this);
     }

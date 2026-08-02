@@ -1,12 +1,12 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="using:QuantHub.Desktop.Views.Controls"
+             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
              x:Class="QuantHub.Desktop.Views.Pages.FundamentalsView">
+  <Panel>
   <StackPanel>
 
-    <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DestructiveBrush}"
-               IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmptyToVis}}"
-               Margin="0,0,0,16" TextWrapping="Wrap"/>
+    <controls:ErrorCard Message="{Binding ErrorMessage}"/>
 
     <StackPanel IsVisible="{Binding Data, Converter={StaticResource NotEmptyToVis}}">
 
@@ -20,11 +20,76 @@
         <TextBlock Text="{Binding Data.Description}" TextWrapping="Wrap"/>
       </Border>
 
+      <!-- Earnings - this tab's first genuinely forward-looking content (everything else is
+           trailing ratios): last 4 quarters' actual vs. estimated EPS plus the next earnings date -->
+      <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+        <StackPanel>
+          <Grid Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="EARNINGS" Classes="cardTitle" Margin="0"/>
+            <Border Grid.Column="1" Classes="chip" Background="{DynamicResource FundamentalsAccentBrush}"
+                    IsVisible="{Binding NextEarningsLabel, Converter={StaticResource NotEmptyToVis}}">
+              <TextBlock Text="{Binding NextEarningsLabel, StringFormat='Next: {0}'}" Classes="chipText"/>
+            </Border>
+          </Grid>
+          <lvc:CartesianChart Series="{Binding EarningsSeries}" XAxes="{Binding EarningsXAxes}" YAxes="{Binding EarningsYAxes}"
+                               Background="Transparent" Height="160"
+                               IsVisible="{Binding HasEarningsHistory}"/>
+          <TextBlock Text="No recent earnings history available." Foreground="{DynamicResource MutedTextBrush}"
+                     IsVisible="{Binding HasEarningsHistory, Converter={StaticResource InverseBoolToVis}}"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Dividends: its own card rather than a single row buried in FINANCIAL HEALTH, since yield
+           alone doesn't say much without the per-share rate and how much of earnings it consumes. -->
+      <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+        <StackPanel>
+          <TextBlock Text="DIVIDENDS" Classes="cardTitle"/>
+          <UniformGrid Columns="3" Rows="1" IsVisible="{Binding HasDividendData}">
+            <StackPanel>
+              <TextBlock Text="Dividend Yield" Classes="sectionLabel"/>
+              <TextBlock Text="{Binding Data.DividendYield, StringFormat=P2}" FontFamily="{StaticResource MonoFontFamily}" FontSize="18"
+                         Foreground="{DynamicResource PositiveBrush}"/>
+            </StackPanel>
+            <StackPanel>
+              <TextBlock Text="Dividend Rate" Classes="sectionLabel"/>
+              <TextBlock Text="{Binding Data.DividendRate, StringFormat={}{0:0.00}/share}" FontFamily="{StaticResource MonoFontFamily}" FontSize="18"/>
+            </StackPanel>
+            <StackPanel>
+              <TextBlock Text="Payout Ratio" Classes="sectionLabel"/>
+              <TextBlock Text="{Binding Data.PayoutRatio, StringFormat=P2}" FontFamily="{StaticResource MonoFontFamily}" FontSize="18"/>
+            </StackPanel>
+          </UniformGrid>
+          <TextBlock Text="This stock does not currently pay a dividend." Foreground="{DynamicResource MutedTextBrush}"
+                     IsVisible="{Binding HasDividendData, Converter={StaticResource InverseBoolToVis}}"/>
+        </StackPanel>
+      </Border>
+
       <!-- Beginner: plain-English valuation/dividend/debt read, no numeric grids -->
       <Border Classes="card" IsVisible="{Binding IsBeginner}">
         <StackPanel>
           <TextBlock Text="Is this stock cheap or expensive?" Classes="friendlyCardTitle"/>
           <TextBlock Text="{Binding BeginnerSummary}" TextWrapping="Wrap" FontSize="15"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Beginner: size/range/growth as plain sentences, standing in for the numeric metric grids -->
+      <Border Classes="card" IsVisible="{Binding IsBeginner}">
+        <StackPanel>
+          <TextBlock Text="Quick facts" Classes="friendlyCardTitle"/>
+          <ItemsControl ItemsSource="{Binding BeginnerQuickFacts}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                  <Ellipse Width="6" Height="6" Margin="2,7,10,0" VerticalAlignment="Top" Fill="{DynamicResource PrimaryBrush}"/>
+                  <TextBlock Text="{Binding}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
         </StackPanel>
       </Border>
 
@@ -92,7 +157,6 @@
             <controls:MetricRow Label="Current Ratio" Value="{Binding Data.CurrentRatio, StringFormat={}{0:0.00}}"/>
             <controls:MetricRow Label="Quick Ratio" Value="{Binding Data.QuickRatio, StringFormat={}{0:0.00}}"/>
             <controls:MetricRow Label="Beta" Value="{Binding Data.Beta, StringFormat={}{0:0.00}}"/>
-            <controls:MetricRow Label="Dividend Yield" Value="{Binding Data.DividendYield, StringFormat=P2}"/>
             <controls:MetricRow Label="EPS" Value="{Binding Data.Eps, StringFormat={}{0:0.00}}"/>
             <controls:MetricRow Label="Free Cash Flow" Value="{Binding Data.FreeCashflow, StringFormat=N0}"
                                  IsVisible="{Binding IsPro}"/>
@@ -141,4 +205,6 @@
       </Border>
     </StackPanel>
   </StackPanel>
+  <controls:BusyOverlay IsBusy="{Binding IsBusy}"/>
+  </Panel>
 </UserControl>

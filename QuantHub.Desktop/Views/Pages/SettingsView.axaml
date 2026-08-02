@@ -53,6 +53,38 @@
 
     <Border Classes="card">
       <StackPanel>
+        <TextBlock Text="ACCENT COLOR" Classes="cardTitle"/>
+        <ItemsControl ItemsSource="{Binding AccentColors}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal"/>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Button Padding="0" Margin="0,0,12,0" Width="40" Height="40" CornerRadius="20"
+                      Background="Transparent" BorderThickness="0" Cursor="Hand"
+                      ToolTip.Tip="{Binding Label}"
+                      Command="{Binding DataContext.SelectAccentCommand, ElementName=Root}"
+                      CommandParameter="{Binding}">
+                <Border Width="32" Height="32" CornerRadius="16" BorderThickness="3"
+                        Background="{Binding Hsl, Converter={StaticResource HslToBrush}}">
+                  <Border.BorderBrush>
+                    <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="TextBrush|Transparent">
+                      <Binding Path="Name"/>
+                      <Binding Path="DataContext.AccentName" ElementName="Root"/>
+                    </MultiBinding>
+                  </Border.BorderBrush>
+                </Border>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
+      <StackPanel>
         <TextBlock Text="DIFFICULTY MODE" Classes="cardTitle"/>
         <ItemsControl ItemsSource="{Binding ViewModeOptions}">
           <ItemsControl.ItemTemplate>
@@ -81,12 +113,15 @@
 
     <Border Classes="card">
       <StackPanel>
-        <TextBlock Text="AI RESEARCH" Classes="cardTitle"/>
-        <TextBlock Text="Your Claude API key, used by the AI Research chat page. Stored locally only."
-                   TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,10"/>
-        <TextBox Text="{Binding ClaudeApiKey}"
-                 FontFamily="{StaticResource MonoFontFamily}" Width="420" HorizontalAlignment="Left"
-                 ToolTip.Tip="sk-ant-..."/>
+        <TextBlock Text="WATCHLIST BACKUP" Classes="cardTitle"/>
+        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,10"
+                   Text="Your watchlist lives only on this machine - export it to a file you can keep somewhere safe, or bring it back with Import (merges into whatever's already here, never replaces it)."/>
+        <StackPanel Orientation="Horizontal">
+          <Button x:Name="ExportWatchlistButton" Content="⬇ Export Watchlist" Margin="0,0,8,0"/>
+          <Button x:Name="ImportWatchlistButton" Content="⬆ Import Watchlist"/>
+        </StackPanel>
+        <TextBlock x:Name="BackupStatusText" FontSize="12" Margin="0,10,0,0" TextWrapping="Wrap"
+                   Foreground="{DynamicResource MutedTextBrush}" IsVisible="False"/>
       </StackPanel>
     </Border>
   </StackPanel>

@@ -17,6 +17,10 @@ public static class ChartPalette
     public static SKColor ChartAccent3 => Resolve("ChartAccent3Brush");
     public static SKColor Upgrade => Resolve("UpgradeBrush");
     public static SKColor Downgrade => Resolve("DowngradeBrush");
+    public static SKColor UniverseAccent => Resolve("UniverseAccentBrush");
+    public static SKColor FundamentalsAccent => Resolve("FundamentalsAccentBrush");
+    public static SKColor InsiderAccent => Resolve("InsiderAccentBrush");
+    public static SKColor MarketPulseAccent => Resolve("MarketPulseAccentBrush");
 
     private static SKColor Resolve(string key)
     {

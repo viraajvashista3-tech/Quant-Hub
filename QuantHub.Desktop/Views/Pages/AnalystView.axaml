@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             xmlns:controls="using:QuantHub.Desktop.Views.Controls"
              x:Class="QuantHub.Desktop.Views.Pages.AnalystView">
   <UserControl.Styles>
     <Style Selector="TextBlock.wallStreetHeading">
@@ -18,11 +19,10 @@
     </Style>
   </UserControl.Styles>
 
+  <Panel>
   <StackPanel>
 
-    <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DestructiveBrush}"
-               IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmptyToVis}}"
-               Margin="0,0,0,16" TextWrapping="Wrap"/>
+    <controls:ErrorCard Message="{Binding ErrorMessage}"/>
 
     <StackPanel IsVisible="{Binding Data, Converter={StaticResource NotEmptyToVis}}">
 
@@ -34,7 +34,7 @@
             <ColumnDefinition Width="Auto"/>
           </Grid.ColumnDefinitions>
           <StackPanel Grid.Column="0">
-            <TextBlock Text="{Binding Data.Ticker}" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}"/>
+            <TextBlock Text="{Binding Data.Ticker}" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource ChartAccent2Brush}"/>
             <TextBlock Text="Analyst Consensus" FontSize="12" Foreground="{DynamicResource MutedTextBrush}"/>
           </StackPanel>
           <StackPanel Grid.Column="2" HorizontalAlignment="Right">
@@ -78,6 +78,25 @@
                          Foreground="{DynamicResource PrimaryBrush}"/>
             </StackPanel>
           </UniformGrid>
+        </StackPanel>
+      </Border>
+
+      <!-- Signature visual for this tab: where the current price sits within the analyst Low-High
+           target range, a gauge read distinct from the raw-figures card above -->
+      <Border Classes="card" IsVisible="{Binding HasTargetGauge}">
+        <StackPanel>
+          <TextBlock Text="PRICE TARGET GAUGE" Classes="cardTitle"/>
+          <ProgressBar Minimum="{Binding TargetGaugeMin}" Maximum="{Binding TargetGaugeMax}" Value="{Binding TargetGaugeValue}"
+                       Height="14" CornerRadius="7" Foreground="{DynamicResource ChartAccent2Brush}"/>
+          <Grid Margin="0,4,0,0">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="{Binding Data.TargetLow, StringFormat='Low {0:0.00}'}" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
+            <TextBlock Grid.Column="1" Text="{Binding Data.TargetHigh, StringFormat='High {0:0.00}'}" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
+          </Grid>
+          <TextBlock Text="{Binding TargetGaugeLabel}" TextWrapping="Wrap" FontSize="12" Margin="0,8,0,0" Foreground="{DynamicResource MutedTextBrush}"/>
         </StackPanel>
       </Border>
 
@@ -132,4 +151,6 @@
       </Border>
     </StackPanel>
   </StackPanel>
+  <controls:BusyOverlay IsBusy="{Binding IsBusy}"/>
+  </Panel>
 </UserControl>

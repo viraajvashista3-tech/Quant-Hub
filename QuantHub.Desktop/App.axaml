@@ -2,6 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:styling="using:FluentAvalonia.Styling"
              xmlns:conv="using:QuantHub.Desktop.Converters"
+             xmlns:vm="using:QuantHub.Desktop.ViewModels"
+             xmlns:views="using:QuantHub.Desktop.Views"
              xmlns:vmp="using:QuantHub.Desktop.ViewModels.Pages"
              xmlns:viewsp="using:QuantHub.Desktop.Views.Pages"
              x:Class="QuantHub.Desktop.App"
@@ -26,6 +28,9 @@
       <conv:VerdictToIconConverter x:Key="VerdictToIcon"/>
       <conv:SignToBrushConverter x:Key="SignToBrush"/>
       <conv:TransactionTypeToBrushConverter x:Key="TransactionTypeToBrush"/>
+      <conv:ConsensusRatingToBrushConverter x:Key="ConsensusRatingToBrush"/>
+      <conv:OwnershipCodeConverter x:Key="OwnershipCode"/>
+      <conv:HslToBrushConverter x:Key="HslToBrush"/>
       <conv:IsEqualConverter x:Key="IsEqual"/>
       <conv:EqualsToBrushConverter x:Key="EqualsToBrush"/>
     </ResourceDictionary>
@@ -36,14 +41,17 @@
        View through these, via Avalonia's global Application.DataTemplates (the equivalent of WPF's
        implicit-DataTemplate-in-a-ResourceDictionary pattern). -->
   <Application.DataTemplates>
+    <DataTemplate DataType="{x:Type vm:StockWorkspaceViewModel}">
+      <views:StockWorkspaceView/>
+    </DataTemplate>
     <DataTemplate DataType="{x:Type vmp:UniverseViewModel}">
       <viewsp:UniverseView/>
     </DataTemplate>
-    <DataTemplate DataType="{x:Type vmp:ComingSoonViewModel}">
-      <viewsp:ComingSoonView/>
-    </DataTemplate>
     <DataTemplate DataType="{x:Type vmp:SettingsViewModel}">
       <viewsp:SettingsView/>
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmp:TrackRecordViewModel}">
+      <viewsp:TrackRecordView/>
     </DataTemplate>
     <DataTemplate DataType="{x:Type vmp:FundamentalsViewModel}">
       <viewsp:FundamentalsView/>
@@ -59,9 +67,6 @@
     </DataTemplate>
     <DataTemplate DataType="{x:Type vmp:PeersViewModel}">
       <viewsp:PeersView/>
-    </DataTemplate>
-    <DataTemplate DataType="{x:Type vmp:AiResearchViewModel}">
-      <viewsp:AiResearchView/>
     </DataTemplate>
     <DataTemplate DataType="{x:Type vmp:TerminalViewModel}">
       <viewsp:TerminalView/>

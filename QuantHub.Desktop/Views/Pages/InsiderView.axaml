@@ -1,11 +1,12 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:QuantHub.Desktop.Views.Controls"
+             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
              x:Class="QuantHub.Desktop.Views.Pages.InsiderView">
+  <Panel>
   <StackPanel>
 
-    <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DestructiveBrush}"
-               IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmptyToVis}}"
-               Margin="0,0,0,16" TextWrapping="Wrap"/>
+    <controls:ErrorCard Message="{Binding ErrorMessage}"/>
 
     <StackPanel IsVisible="{Binding Data, Converter={StaticResource NotEmptyToVis}}">
 
@@ -17,13 +18,22 @@
             <ColumnDefinition Width="Auto"/>
           </Grid.ColumnDefinitions>
           <StackPanel Grid.Column="0">
-            <TextBlock Text="{Binding Data.Ticker}" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}"/>
+            <TextBlock Text="{Binding Data.Ticker}" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource InsiderAccentBrush}"/>
             <TextBlock Text="{Binding Data.Name}" FontSize="12" Foreground="{DynamicResource MutedTextBrush}"/>
           </StackPanel>
           <Border Grid.Column="2" Classes="statusBadge" Background="{Binding SentimentBrush}" HorizontalAlignment="Right">
             <TextBlock Text="{Binding Data.NetSentiment}" FontWeight="Bold" FontSize="16" Foreground="White"/>
           </Border>
         </Grid>
+      </Border>
+
+      <!-- Signature visual for this tab: Purchase/Sale transactions plotted over time -->
+      <Border Classes="card" IsVisible="{Binding HasTimeline}">
+        <StackPanel>
+          <TextBlock Text="TRANSACTION TIMELINE" Classes="cardTitle"/>
+          <lvc:CartesianChart Series="{Binding TimelineSeries}" XAxes="{Binding TimelineXAxes}" YAxes="{Binding TimelineYAxes}"
+                               Background="Transparent" Height="160"/>
+        </StackPanel>
       </Border>
 
       <!-- Beginner: plain-English buy/sell sentiment, no raw ownership grid -->
@@ -71,6 +81,46 @@
           </StackPanel>
         </Border>
       </UniformGrid>
+
+      <!-- Top institutional holders (Intermediate+) - who owns this, complementing the ownership-% cards above -->
+      <StackPanel IsVisible="{Binding IsIntermediatePlus}">
+      <Border Classes="card" IsVisible="{Binding Data.TopInstitutionalHolders, Converter={StaticResource NotEmptyToVis}}">
+        <StackPanel>
+          <TextBlock Text="TOP INSTITUTIONAL HOLDERS" Classes="cardTitle"/>
+          <Grid Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="90"/>
+              <ColumnDefinition Width="110"/>
+              <ColumnDefinition Width="90"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="ORGANIZATION" Classes="sectionLabel"/>
+            <TextBlock Grid.Column="1" Text="% HELD" Classes="sectionLabel"/>
+            <TextBlock Grid.Column="2" Text="SHARES" Classes="sectionLabel"/>
+            <TextBlock Grid.Column="3" Text="Δ %" Classes="sectionLabel"/>
+          </Grid>
+          <ItemsControl ItemsSource="{Binding Data.TopInstitutionalHolders}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid Margin="0,0,0,10">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="90"/>
+                    <ColumnDefinition Width="110"/>
+                    <ColumnDefinition Width="90"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="{Binding Organization}" TextWrapping="Wrap"/>
+                  <TextBlock Grid.Column="1" Text="{Binding PctHeld, StringFormat=P2}" FontFamily="{StaticResource MonoFontFamily}"/>
+                  <TextBlock Grid.Column="2" Text="{Binding Position, StringFormat=N0}" FontFamily="{StaticResource MonoFontFamily}"/>
+                  <TextBlock Grid.Column="3" Text="{Binding PctChange, StringFormat=P1}" FontFamily="{StaticResource MonoFontFamily}"
+                             Foreground="{Binding PctChange, Converter={StaticResource SignToBrush}}"/>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+      </StackPanel>
 
       <!-- Beginner: same real transactions, read as plain sentences instead of a grid -->
       <Border Classes="card" IsVisible="{Binding IsBeginner}">
@@ -122,11 +172,16 @@
                              Foreground="{DynamicResource MutedTextBrush}"/>
                   <StackPanel Grid.Column="1">
                     <TextBlock Text="{Binding Insider}" TextWrapping="Wrap"/>
-                    <TextBlock Text="{Binding Position}" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"
-                               IsVisible="{Binding Position, Converter={StaticResource NotEmptyToVis}}"/>
+                    <StackPanel Orientation="Horizontal">
+                      <TextBlock Text="{Binding Position}" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"
+                                 IsVisible="{Binding Position, Converter={StaticResource NotEmptyToVis}}"/>
+                      <TextBlock Text="{Binding Ownership, Converter={StaticResource OwnershipCode}, StringFormat=' ({0})'}"
+                                 FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
+                    </StackPanel>
                   </StackPanel>
                   <TextBlock Grid.Column="2" Text="{Binding TransactionType}" FontWeight="SemiBold"
-                             Foreground="{Binding TransactionType, Converter={StaticResource TransactionTypeToBrush}}"/>
+                             Foreground="{Binding TransactionType, Converter={StaticResource TransactionTypeToBrush}}"
+                             ToolTip.Tip="{Binding Text}"/>
                   <TextBlock Grid.Column="3" Text="{Binding Shares, StringFormat=N0}" FontFamily="{StaticResource MonoFontFamily}"/>
                   <TextBlock Grid.Column="4" Text="{Binding Value, StringFormat=C0}" FontFamily="{StaticResource MonoFontFamily}"/>
                 </Grid>
@@ -137,4 +192,6 @@
       </Border>
     </StackPanel>
   </StackPanel>
+  <controls:BusyOverlay IsBusy="{Binding IsBusy}"/>
+  </Panel>
 </UserControl>

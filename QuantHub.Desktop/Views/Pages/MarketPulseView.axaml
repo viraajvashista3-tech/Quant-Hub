@@ -1,16 +1,16 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             xmlns:controls="using:QuantHub.Desktop.Views.Controls"
              x:Class="QuantHub.Desktop.Views.Pages.MarketPulseView">
+  <Panel>
   <StackPanel>
 
-    <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DestructiveBrush}"
-               IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmptyToVis}}"
-               Margin="0,0,0,16" TextWrapping="Wrap"/>
+    <controls:ErrorCard Message="{Binding ErrorMessage}"/>
 
     <StackPanel IsVisible="{Binding Data, Converter={StaticResource NotEmptyToVis}}">
 
-      <Border Classes="card">
+      <Border Classes="card" BorderBrush="{DynamicResource MarketPulseAccentBrush}">
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -33,13 +33,31 @@
         <TextBlock Text="{Binding BeginnerSummary}" TextWrapping="Wrap" FontSize="15"/>
       </Border>
 
+      <!-- Beginner: sector leaders/laggards as plain sentences, standing in for the technical bar chart -->
+      <Border Classes="card" IsVisible="{Binding IsBeginner}">
+        <StackPanel>
+          <TextBlock Text="Sector snapshot" Classes="friendlyCardTitle"/>
+          <ItemsControl ItemsSource="{Binding SectorNarrative}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                  <Ellipse Width="6" Height="6" Margin="2,7,10,0" VerticalAlignment="Top" Fill="{DynamicResource PrimaryBrush}"/>
+                  <TextBlock Text="{Binding}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
       <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
         <StackPanel IsVisible="{Binding Data.RotationNote, Converter={StaticResource NotEmptyToVis}}">
           <TextBlock Text="{Binding Data.RotationNote}" TextWrapping="Wrap"/>
         </StackPanel>
       </Border>
 
-      <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+      <!-- Major indices are basic market info, not an "advanced" feature - shown to all tiers -->
+      <Border Classes="card">
         <StackPanel>
           <TextBlock Text="MAJOR INDICES" Classes="cardTitle"/>
           <ItemsControl ItemsSource="{Binding Data.Indices}">
@@ -51,7 +69,10 @@
             <ItemsControl.ItemTemplate>
               <DataTemplate>
                 <StackPanel Margin="0,0,12,0">
-                  <TextBlock Text="{Binding Label}" Classes="sectionLabel"/>
+                  <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Label}" Classes="sectionLabel"/>
+                    <TextBlock Text="{Binding Symbol, StringFormat=' ({0})'}" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/>
+                  </StackPanel>
                   <TextBlock Text="{Binding Price, StringFormat={}{0:0.00}}" FontFamily="{StaticResource MonoFontFamily}" FontSize="18"/>
                   <TextBlock Text="{Binding ChangePct, StringFormat={}{0:+0.00;-0.00}%}" FontFamily="{StaticResource MonoFontFamily}" FontSize="13"
                              Foreground="{Binding ChangePct, Converter={StaticResource SignToBrush}}"/>
@@ -67,6 +88,53 @@
           <TextBlock Text="SECTOR PERFORMANCE (1D %)" Classes="cardTitle"/>
           <lvc:CartesianChart Series="{Binding SectorSeries}" XAxes="{Binding SectorXAxes}" YAxes="{Binding SectorYAxes}"
                                Background="Transparent" Height="380"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Signature visual for this tab: sector heatmap colored by move magnitude (per-column scale),
+           distinct from Peers' correlation heatmap (colored by co-movement) -->
+      <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+        <StackPanel IsVisible="{Binding SectorHeatRows, Converter={StaticResource NotEmptyToVis}}">
+          <TextBlock Text="SECTOR HEATMAP (1D / 1W / 1M)" Classes="cardTitle"/>
+          <Grid Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="80"/>
+              <ColumnDefinition Width="80"/>
+              <ColumnDefinition Width="80"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="SECTOR" Classes="sectionLabel"/>
+            <TextBlock Grid.Column="1" Text="1D" Classes="sectionLabel" HorizontalAlignment="Center"/>
+            <TextBlock Grid.Column="2" Text="1W" Classes="sectionLabel" HorizontalAlignment="Center"/>
+            <TextBlock Grid.Column="3" Text="1M" Classes="sectionLabel" HorizontalAlignment="Center"/>
+          </Grid>
+          <ItemsControl ItemsSource="{Binding SectorHeatRows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid Margin="0,0,0,4">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="80"/>
+                    <ColumnDefinition Width="80"/>
+                    <ColumnDefinition Width="80"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="{Binding Sector}" VerticalAlignment="Center"/>
+                  <Border Grid.Column="1" Height="30" Margin="2,0" Background="{Binding OneDay.Background}">
+                    <TextBlock Text="{Binding OneDay.Display}" FontFamily="{StaticResource MonoFontFamily}" FontSize="11"
+                               Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  </Border>
+                  <Border Grid.Column="2" Height="30" Margin="2,0" Background="{Binding OneWeek.Background}">
+                    <TextBlock Text="{Binding OneWeek.Display}" FontFamily="{StaticResource MonoFontFamily}" FontSize="11"
+                               Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  </Border>
+                  <Border Grid.Column="3" Height="30" Margin="2,0" Background="{Binding OneMonth.Background}">
+                    <TextBlock Text="{Binding OneMonth.Display}" FontFamily="{StaticResource MonoFontFamily}" FontSize="11"
+                               Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  </Border>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
         </StackPanel>
       </Border>
 
@@ -119,7 +187,10 @@
                     <ColumnDefinition Width="90"/>
                     <ColumnDefinition Width="90"/>
                   </Grid.ColumnDefinitions>
-                  <TextBlock Grid.Column="0" Text="{Binding Label}" VerticalAlignment="Center"/>
+                  <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Label}"/>
+                    <TextBlock Text="{Binding Symbol, StringFormat=' ({0})'}" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
+                  </StackPanel>
                   <TextBlock Grid.Column="1" Text="{Binding ChangePct, StringFormat={}{0:+0.00;-0.00}%}" FontFamily="{StaticResource MonoFontFamily}"
                              Foreground="{Binding ChangePct, Converter={StaticResource SignToBrush}}"/>
                   <TextBlock Grid.Column="2" Text="{Binding Change1wPct, StringFormat={}{0:+0.00;-0.00}%}" FontFamily="{StaticResource MonoFontFamily}"
@@ -134,4 +205,6 @@
       </Border>
     </StackPanel>
   </StackPanel>
+  <controls:BusyOverlay IsBusy="{Binding IsBusy}"/>
+  </Panel>
 </UserControl>

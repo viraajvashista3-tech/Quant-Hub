@@ -21,6 +21,15 @@
       <SolidColorBrush x:Key="ChartAccent3Brush" Color="#6366F1"/>
       <SolidColorBrush x:Key="UpgradeBrush" Color="#22C55E"/>
       <SolidColorBrush x:Key="DowngradeBrush" Color="#F97316"/>
+
+      <!-- Per-tab signature accents (Phase 5 - distinct visual identity per page, beyond the shared
+           PrimaryBrush/ChartAccent2/ChartAccent3). Terminal/Analyst/Peers reuse Primary/ChartAccent2/
+           ChartAccent3 respectively; these four cover the remaining tabs that didn't already have a
+           natural accent to reuse. -->
+      <SolidColorBrush x:Key="UniverseAccentBrush" Color="#14B8A6"/>
+      <SolidColorBrush x:Key="FundamentalsAccentBrush" Color="#EAB308"/>
+      <SolidColorBrush x:Key="InsiderAccentBrush" Color="#F43F5E"/>
+      <SolidColorBrush x:Key="MarketPulseAccentBrush" Color="#38BDF8"/>
     </ResourceDictionary>
     <ResourceDictionary x:Key="Light">
       <SolidColorBrush x:Key="BackgroundBrush" Color="#F3F4F6"/>
@@ -36,6 +45,13 @@
       <SolidColorBrush x:Key="ChartAccent3Brush" Color="#4F46E5"/>
       <SolidColorBrush x:Key="UpgradeBrush" Color="#16A34A"/>
       <SolidColorBrush x:Key="DowngradeBrush" Color="#EA580C"/>
+
+      <!-- Darkened relative to their Dark-theme counterparts for contrast against a white surface,
+           same treatment as Destructive/Warning above. -->
+      <SolidColorBrush x:Key="UniverseAccentBrush" Color="#0F766E"/>
+      <SolidColorBrush x:Key="FundamentalsAccentBrush" Color="#A16207"/>
+      <SolidColorBrush x:Key="InsiderAccentBrush" Color="#BE123C"/>
+      <SolidColorBrush x:Key="MarketPulseAccentBrush" Color="#0369A1"/>
     </ResourceDictionary>
   </ResourceDictionary.ThemeDictionaries>
 

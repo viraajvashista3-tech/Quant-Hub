@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using LiveChartsCore;
+using LiveChartsCore.Defaults;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using QuantHub.Core.Models;
@@ -52,6 +53,13 @@ public sealed partial class PeersViewModel : ObservableObject, IRefreshablePage
     public ObservableCollection<ISeries> ComparisonSeries { get; } = [];
     public ObservableCollection<Axis> ComparisonXAxes { get; } = [];
     public ObservableCollection<Axis> ComparisonYAxes { get; } = [];
+
+    public ObservableCollection<ISeries> ValuationScatterSeries { get; } = [];
+    public ObservableCollection<Axis> ValuationScatterXAxes { get; } = [];
+    public ObservableCollection<Axis> ValuationScatterYAxes { get; } = [];
+
+    [ObservableProperty]
+    private bool _hasValuationScatter;
 
     public bool IsPro => _settings.IsPro;
     public bool IsBeginner => _settings.ViewMode == ViewMode.Beginner;
@@ -106,6 +114,7 @@ public sealed partial class PeersViewModel : ObservableObject, IRefreshablePage
             Rows = result.Peers.Select(p => new PeerRow(p, p.Ticker == ticker.ToUpperInvariant())).ToList();
             BuildCorrelation(result.CorrelationMatrix);
             BuildComparisonChart(Rows);
+            BuildValuationScatter(Rows);
 
             if (result.Peers.Count == 0) ErrorMessage = $"No peer data found for {ticker}.";
         }
@@ -164,6 +173,58 @@ public sealed partial class PeersViewModel : ObservableObject, IRefreshablePage
             TextSize = 11,
             Labeler = v => $"{v:0.0}x",
             MinLimit = 0
+        });
+    }
+
+    /// <summary>Signature visual for this tab: P/E (valuation) vs. ROE (quality) - a scatter, distinct
+    /// from the bar chart and correlation heatmap already on this page. Two series (muted peers, accent
+    /// subject) rather than one uniformly-colored series, so the subject stock still reads at a glance
+    /// the way it does elsewhere on this page (highlighted table row, accent-colored P/E bar).</summary>
+    private void BuildValuationScatter(IReadOnlyList<PeerRow> rows)
+    {
+        ValuationScatterSeries.Clear();
+        ValuationScatterXAxes.Clear();
+        ValuationScatterYAxes.Clear();
+
+        bool Valid(PeerRow r) => r.Stock.Pe is > 0 && r.Stock.ReturnOnEquity is not null;
+        var peerPoints = rows.Where(r => !r.IsSubject && Valid(r))
+            .Select(r => new ObservablePoint(r.Stock.Pe, r.Stock.ReturnOnEquity!.Value * 100)).ToList();
+        var subjectPoints = rows.Where(r => r.IsSubject && Valid(r))
+            .Select(r => new ObservablePoint(r.Stock.Pe, r.Stock.ReturnOnEquity!.Value * 100)).ToList();
+
+        HasValuationScatter = peerPoints.Count + subjectPoints.Count > 0;
+        if (!HasValuationScatter) return;
+
+        ValuationScatterSeries.Add(new ScatterSeries<ObservablePoint>
+        {
+            Values = peerPoints, Name = "Peers",
+            Fill = new SolidColorPaint(ChartPalette.AxisText),
+            Stroke = null,
+            GeometrySize = 12
+        });
+        ValuationScatterSeries.Add(new ScatterSeries<ObservablePoint>
+        {
+            Values = subjectPoints, Name = "This stock",
+            Fill = new SolidColorPaint(ChartPalette.ChartAccent3),
+            Stroke = null,
+            GeometrySize = 20
+        });
+
+        ValuationScatterXAxes.Add(new Axis
+        {
+            Name = "P/E",
+            LabelsPaint = new SolidColorPaint(ChartPalette.AxisText),
+            SeparatorsPaint = new SolidColorPaint(ChartPalette.AxisLine) { StrokeThickness = 1 },
+            TextSize = 11,
+            Labeler = v => $"{v:0.0}x"
+        });
+        ValuationScatterYAxes.Add(new Axis
+        {
+            Name = "ROE",
+            LabelsPaint = new SolidColorPaint(ChartPalette.AxisText),
+            SeparatorsPaint = new SolidColorPaint(ChartPalette.AxisLine) { StrokeThickness = 1 },
+            TextSize = 11,
+            Labeler = v => $"{v:0}%"
         });
     }
 

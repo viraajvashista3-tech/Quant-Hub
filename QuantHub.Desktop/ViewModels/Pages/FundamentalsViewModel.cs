@@ -1,9 +1,14 @@
+using System.Collections.ObjectModel;
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using LiveChartsCore;
+using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore.SkiaSharpView.Painting;
 using QuantHub.Core.Models;
 using QuantHub.Core.Services;
 using QuantHub.Desktop.Services;
+using QuantHub.Desktop.Theming;
 
 namespace QuantHub.Desktop.ViewModels.Pages;
 
@@ -25,6 +30,19 @@ public sealed partial class FundamentalsViewModel : ObservableObject, IRefreshab
     [ObservableProperty]
     private double? _currentPrice;
 
+    [ObservableProperty]
+    private EarningsData? _earnings;
+
+    public ObservableCollection<ISeries> EarningsSeries { get; } = [];
+    public ObservableCollection<Axis> EarningsXAxes { get; } = [];
+    public ObservableCollection<Axis> EarningsYAxes { get; } = [];
+
+    public bool HasEarningsHistory => Earnings?.History.Count > 0;
+
+    public string? NextEarningsLabel => Earnings?.NextEarningsDate is { } d && DateTime.TryParse(d, out var parsed)
+        ? parsed.ToString("MMM d, yyyy")
+        : null;
+
     public bool IsPro => _settings.IsPro;
     public bool IsBeginner => _settings.ViewMode == ViewMode.Beginner;
     public bool IsIntermediatePlus => !IsBeginner;
@@ -34,6 +52,8 @@ public sealed partial class FundamentalsViewModel : ObservableObject, IRefreshab
 
     public bool ShowBelowGraham => IsBelowGraham == true;
     public bool ShowAboveGraham => IsBelowGraham == false;
+
+    public bool HasDividendData => Data?.DividendYield is not null || Data?.DividendRate is not null;
 
     /// <summary>Plain-English read on valuation/dividend/debt for Beginner mode. Thresholds are
     /// rough, commonly-cited rules of thumb (not sector-relative, since this page has no peer set to
@@ -80,6 +100,75 @@ public sealed partial class FundamentalsViewModel : ObservableObject, IRefreshab
         }
     }
 
+    /// <summary>Beginner-only "quick facts" list - size, 52-week range, revenue trend, in plain
+    /// language. Deliberately doesn't repeat dividend/valuation/debt, which BeginnerSummary already covers.</summary>
+    public IReadOnlyList<string> BeginnerQuickFacts
+    {
+        get
+        {
+            if (Data is not { } d) return [];
+            var list = new List<string>();
+            if (d.MarketCap is { } mc) list.Add($"Market cap: {FormatLarge(mc)}.");
+            if (d.FiftyTwoWeekHigh is { } hi && d.FiftyTwoWeekLow is { } lo)
+                list.Add($"Over the past year it's traded between {lo:0.00} and {hi:0.00}.");
+            if (d.RevenueGrowth is { } rg)
+                list.Add(rg >= 0
+                    ? $"Revenue is growing about {rg * 100:0.0}% a year."
+                    : $"Revenue has been shrinking about {Math.Abs(rg) * 100:0.0}% a year.");
+            return list;
+        }
+    }
+
+    /// <summary>Actual vs. estimated EPS per quarter, oldest-to-newest left-to-right (History itself
+    /// is stored newest-first, per EarningsAnalyzer) - a beat shows as the Actual bar taller than
+    /// Estimate, a miss shows it shorter, without needing per-bar conditional coloring.</summary>
+    private void BuildEarningsChart()
+    {
+        EarningsSeries.Clear();
+        EarningsXAxes.Clear();
+        EarningsYAxes.Clear();
+
+        var quarters = Earnings?.History.Reverse().ToList();
+        if (quarters is not { Count: > 0 }) return;
+
+        var actual = quarters.Select(q => (double?)q.EpsActual).ToArray();
+        var estimate = quarters.Select(q => (double?)q.EpsEstimate).ToArray();
+        var labels = quarters.Select(q => DateTime.TryParse(q.Date, out var d) ? d.ToString("MMM yy") : q.Date).ToArray();
+
+        EarningsSeries.Add(new ColumnSeries<double?>
+        {
+            Values = estimate, Name = "Estimate",
+            Fill = new SolidColorPaint(ChartPalette.AxisLine)
+        });
+        EarningsSeries.Add(new ColumnSeries<double?>
+        {
+            Values = actual, Name = "Actual",
+            Fill = new SolidColorPaint(ChartPalette.FundamentalsAccent)
+        });
+
+        EarningsXAxes.Add(new Axis
+        {
+            Labels = labels,
+            LabelsPaint = new SolidColorPaint(ChartPalette.AxisText),
+            SeparatorsPaint = new SolidColorPaint(ChartPalette.AxisLine) { StrokeThickness = 1 },
+            TextSize = 11
+        });
+        EarningsYAxes.Add(new Axis
+        {
+            LabelsPaint = new SolidColorPaint(ChartPalette.AxisText),
+            SeparatorsPaint = new SolidColorPaint(ChartPalette.AxisLine) { StrokeThickness = 1 },
+            TextSize = 11
+        });
+    }
+
+    private static string FormatLarge(double v) => v switch
+    {
+        >= 1e12 => $"${v / 1e12:0.00} trillion",
+        >= 1e9 => $"${v / 1e9:0.0} billion",
+        >= 1e6 => $"${v / 1e6:0.0} million",
+        _ => $"${v:N0}"
+    };
+
     public FundamentalsViewModel(AppState appState, StockAnalysisService stockAnalysis, SettingsService settings)
     {
         _appState = appState;
@@ -113,14 +202,21 @@ public sealed partial class FundamentalsViewModel : ObservableObject, IRefreshab
         {
             var fundamentalsTask = _stockAnalysis.GetFundamentalsAsync(ticker);
             var overviewTask = _stockAnalysis.GetOverviewAsync(ticker);
-            await Task.WhenAll(fundamentalsTask, overviewTask);
+            var earningsTask = _stockAnalysis.GetEarningsAsync(ticker);
+            await Task.WhenAll(fundamentalsTask, overviewTask, earningsTask);
 
             Data = fundamentalsTask.Result;
             CurrentPrice = overviewTask.Result?.Price;
+            Earnings = earningsTask.Result;
             OnPropertyChanged(nameof(IsBelowGraham));
             OnPropertyChanged(nameof(ShowBelowGraham));
             OnPropertyChanged(nameof(ShowAboveGraham));
+            OnPropertyChanged(nameof(HasDividendData));
             OnPropertyChanged(nameof(BeginnerSummary));
+            OnPropertyChanged(nameof(BeginnerQuickFacts));
+            OnPropertyChanged(nameof(HasEarningsHistory));
+            OnPropertyChanged(nameof(NextEarningsLabel));
+            BuildEarningsChart();
             if (Data is null) ErrorMessage = $"No data found for {ticker}.";
         }
         catch (Exception ex)

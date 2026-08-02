@@ -1,0 +1,80 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="QuantHub.Desktop.Views.Pages.TrackRecordView"
+             x:Name="Root">
+  <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+
+    <Border Classes="card">
+      <StackPanel>
+        <TextBlock Text="Why this page exists" Classes="friendlyCardTitle"/>
+        <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource MutedTextBrush}"
+                   Text="Every score and signal in this app is testable, and we test it - out loud. This page is the honest scorecard: not a promise that the Quant Score predicts the market, but a running, growing record of how its calls have actually done, checked against the S&#38;P 500, updated automatically as predictions mature. If the numbers below aren't flattering, they stay exactly as visible as if they were."/>
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
+      <StackPanel>
+        <TextBlock Text="LIVE TRACK RECORD" Classes="cardTitle"/>
+        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,14"
+                   Text="Every Buy/Hold/Avoid call this app has actually shown a user gets logged, then scored 14 days later against what the ticker and the S&#38;P 500 each did over that same stretch - forward-only, so it can't be affected by hindsight."/>
+
+        <Grid Margin="0,0,0,10" ColumnDefinitions="120,80,140,100" IsVisible="{Binding HasData}">
+          <TextBlock Grid.Column="0" Text="SIGNAL" Classes="sectionLabel"/>
+          <TextBlock Grid.Column="1" Text="COUNT" Classes="sectionLabel"/>
+          <TextBlock Grid.Column="2" Text="AVG VS S&amp;P 500" Classes="sectionLabel"/>
+          <TextBlock Grid.Column="3" Text="HIT RATE" Classes="sectionLabel"/>
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Rows}" IsVisible="{Binding HasData}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Grid Margin="0,0,0,12" ColumnDefinitions="120,80,140,100">
+                <Border Grid.Column="0" Classes="statusBadge" Background="{Binding Signal, Converter={StaticResource SignalToBrush}}"
+                        Padding="10,4" HorizontalAlignment="Left">
+                  <TextBlock Text="{Binding Signal}" Foreground="White" FontWeight="Bold" FontSize="11"/>
+                </Border>
+                <TextBlock Grid.Column="1" Text="{Binding Count}" FontFamily="{StaticResource MonoFontFamily}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="2" Text="{Binding AvgExcessReturnPct, StringFormat={}{0:+0.00;-0.00}%}" FontFamily="{StaticResource MonoFontFamily}"
+                           FontWeight="Bold" VerticalAlignment="Center" Foreground="{Binding AvgExcessReturnPct, Converter={StaticResource SignToBrush}}"/>
+                <TextBlock Grid.Column="3" Text="{Binding HitRatePct, StringFormat={}{0:0}%}" FontFamily="{StaticResource MonoFontFamily}"
+                           VerticalAlignment="Center"
+                           IsVisible="{Binding HitRatePct, Converter={StaticResource NotEmptyToVis}}"/>
+                <TextBlock Grid.Column="3" Text="—" FontFamily="{StaticResource MonoFontFamily}" VerticalAlignment="Center"
+                           Foreground="{DynamicResource MutedTextBrush}"
+                           IsVisible="{Binding HitRatePct, Converter={StaticResource InverseBoolToVis}}"/>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <StackPanel HorizontalAlignment="Center" Margin="0,16" MaxWidth="360" IsVisible="{Binding HasData, Converter={StaticResource InverseBoolToVis}}">
+          <TextBlock Text="📈" FontSize="30" HorizontalAlignment="Center" Opacity="0.6" Margin="0,0,0,10"/>
+          <TextBlock Text="No evaluated calls yet" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+          <TextBlock TextWrapping="Wrap" TextAlignment="Center" FontSize="12" Foreground="{DynamicResource MutedTextBrush}"
+                     Text="Predictions need 14 days to mature before they're scored - check back once you've been browsing tickers for a couple of weeks."/>
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
+      <StackPanel>
+        <TextBlock Text="THE HONEST PART" Classes="cardTitle"/>
+        <TextBlock TextWrapping="Wrap" FontSize="13" Margin="0,0,0,10"
+                   Text="Beyond this live log, this app's components have also been rigorously back-tested against years of historical price data, using walk-forward validation (never fitting and grading on the same data) and measuring every outcome against the S&#38;P 500, not a raw price move - so a rising market alone can't masquerade as a working signal."/>
+        <TextBlock TextWrapping="Wrap" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"
+                   Foreground="{DynamicResource WarningBrush}"
+                   Text="That testing has consistently found limited standalone predictive power in these technical components once broad market drift is accounted for. We're telling you that plainly rather than burying it, because a score's value here is in being a structured, transparent way to look at a stock - not a promise that it beats the market."/>
+        <TextBlock Text="{Binding LastRecalibrationText}" TextWrapping="Wrap" FontSize="12"
+                   Foreground="{DynamicResource MutedTextBrush}"/>
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
+      <StackPanel>
+        <TextBlock Text="NOT INVESTMENT ADVICE" Classes="cardTitle"/>
+        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}"
+                   Text="Everything in this app - scores, signals, rankings, and anything the AI Research chat says - is informational and for personal research only. It is not financial advice, and past performance (including everything on this page) is never a guarantee of future results."/>
+      </StackPanel>
+    </Border>
+
+  </StackPanel>
+</UserControl>

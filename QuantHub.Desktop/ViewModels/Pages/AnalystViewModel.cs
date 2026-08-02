@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
+using QuantHub.Core.Analysis;
 using QuantHub.Core.Models;
 using QuantHub.Core.Services;
 using QuantHub.Desktop.Services;
@@ -59,14 +60,39 @@ public sealed partial class AnalystViewModel : ObservableObject, IRefreshablePag
                 ? $"{n} Wall Street analysts cover this stock, and the average view is '{d.ConsensusRating}'."
                 : $"The average analyst view is '{d.ConsensusRating}'.";
 
-            if (d.TargetMean is not { } target || d.CurrentPrice is not { } price || price <= 0)
+            if (AnalystAnalyzer.UpsidePotentialPct(d.TargetMean, d.CurrentPrice) is not { } pct)
             {
                 return coverage;
             }
 
-            var pct = (target - price) / price * 100;
             var direction = pct >= 0 ? "upside" : "downside";
-            return $"{coverage} The average price target of {target:0.00} implies about {Math.Abs(pct):0.0}% {direction} from the current price of {price:0.00}.";
+            return $"{coverage} The average price target of {d.TargetMean:0.00} implies about {Math.Abs(pct):0.0}% {direction} from the current price of {d.CurrentPrice:0.00}.";
+        }
+    }
+
+    /// <summary>Where the current price and the average estimate each sit within the analyst
+    /// Low-High target range, as a 0-100 position - a distinct visual read (a gauge) on the same
+    /// numbers the PRICE TARGETS card already shows as raw figures. Null (gauge hidden) if the range
+    /// is degenerate (High <= Low) or any input is missing.</summary>
+    public bool HasTargetGauge => Data is { TargetLow: { } lo, TargetHigh: { } hi, CurrentPrice: not null } && hi > lo;
+
+    public double TargetGaugeMin => Data?.TargetLow ?? 0;
+    public double TargetGaugeMax => Data?.TargetHigh ?? 0;
+    public double TargetGaugeValue => Data?.CurrentPrice ?? 0;
+
+    public string? TargetGaugeLabel
+    {
+        get
+        {
+            if (!HasTargetGauge || Data is not { } d) return null;
+            var lo = d.TargetLow!.Value;
+            var hi = d.TargetHigh!.Value;
+            var range = hi - lo;
+            var curPct = Math.Clamp((d.CurrentPrice!.Value - lo) / range * 100, 0, 100);
+            var meanText = d.TargetMean is { } mean
+                ? $" the average estimate sits at {Math.Clamp((mean - lo) / range * 100, 0, 100):0}%."
+                : "";
+            return $"Current price is {curPct:0}% of the way from the low to the high estimate;{meanText}";
         }
     }
 
@@ -126,6 +152,11 @@ public sealed partial class AnalystViewModel : ObservableObject, IRefreshablePag
             OnPropertyChanged(nameof(ConsensusBrush));
             OnPropertyChanged(nameof(BeginnerSummary));
             OnPropertyChanged(nameof(NarrativeActions));
+            OnPropertyChanged(nameof(HasTargetGauge));
+            OnPropertyChanged(nameof(TargetGaugeMin));
+            OnPropertyChanged(nameof(TargetGaugeMax));
+            OnPropertyChanged(nameof(TargetGaugeValue));
+            OnPropertyChanged(nameof(TargetGaugeLabel));
 
             if (Data is null)
             {

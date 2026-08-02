@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="QuantHub.Desktop.Views.ShellWindow"
+        x:Name="Root"
         Title="Quant Terminal" Height="900" Width="1440" MinHeight="600" MinWidth="1000"
         WindowStartupLocation="CenterScreen" WindowState="Maximized"
         Background="{DynamicResource BackgroundBrush}">
@@ -30,7 +31,7 @@
           </StackPanel>
 
           <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}"
-                  BorderThickness="1" CornerRadius="10" Height="40"
+                  BorderThickness="1" CornerRadius="10" MinHeight="40"
                   Classes.tickerFocus="{Binding IsKeyboardFocusWithin, ElementName=TickerBox}">
             <Grid>
               <Grid.ColumnDefinitions>
@@ -39,12 +40,80 @@
               </Grid.ColumnDefinitions>
               <TextBlock Grid.Column="0" Text="🔍" FontSize="13" Margin="14,0,0,0" VerticalAlignment="Center"
                          Opacity="0.6"/>
-              <TextBox x:Name="TickerBox" Grid.Column="1" Text="{Binding TickerInput}"
-                       Background="Transparent" BorderThickness="0" FontSize="15" FontWeight="Bold"
-                       VerticalAlignment="Center" Padding="10,0,10,0"
-                       ToolTip.Tip="Type any ticker symbol - every page updates instantly."/>
+              <AutoCompleteBox x:Name="TickerBox" Grid.Column="1" Text="{Binding TickerInput}"
+                                FilterMode="None" MinimumPrefixLength="1"
+                                ValueMemberBinding="{Binding Symbol}"
+                                Background="Transparent" BorderThickness="0" FontSize="15" FontWeight="Bold"
+                                VerticalAlignment="Center" Padding="10,0,10,0"
+                                Watermark="Type any ticker or company name"
+                                ToolTip.Tip="Type any ticker symbol or company name - every page updates instantly.">
+                <AutoCompleteBox.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Margin="4">
+                      <TextBlock Text="{Binding Symbol}" FontWeight="Bold" FontFamily="{StaticResource MonoFontFamily}"/>
+                      <TextBlock Text="{Binding Name, StringFormat=' — {0}'}" Foreground="{DynamicResource MutedTextBrush}"
+                                 Margin="6,0,0,0" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                  </DataTemplate>
+                </AutoCompleteBox.ItemTemplate>
+              </AutoCompleteBox>
             </Grid>
           </Border>
+
+          <UniformGrid Columns="3" Margin="0,10,0,0"
+                       ToolTip.Tip="Difficulty mode - how much detail every page shows.">
+            <Button Padding="0,6" Margin="2,0" HorizontalContentAlignment="Center" BorderThickness="0"
+                    FontSize="11" FontWeight="Bold" Content="Beginner"
+                    Command="{Binding SelectViewModeCommand}" CommandParameter="{Binding ViewModeOptions[0]}"
+                    ToolTip.Tip="{Binding ViewModeOptions[0].Description}">
+              <Button.Background>
+                <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="PrimaryBrush|BackgroundBrush">
+                  <Binding Path="ViewModeOptions[0].Mode"/>
+                  <Binding Path="ViewMode"/>
+                </MultiBinding>
+              </Button.Background>
+              <Button.Foreground>
+                <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="White|MutedTextBrush">
+                  <Binding Path="ViewModeOptions[0].Mode"/>
+                  <Binding Path="ViewMode"/>
+                </MultiBinding>
+              </Button.Foreground>
+            </Button>
+            <Button Padding="0,6" Margin="2,0" HorizontalContentAlignment="Center" BorderThickness="0"
+                    FontSize="10" FontWeight="Bold" Content="Intermediate"
+                    Command="{Binding SelectViewModeCommand}" CommandParameter="{Binding ViewModeOptions[1]}"
+                    ToolTip.Tip="{Binding ViewModeOptions[1].Description}">
+              <Button.Background>
+                <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="PrimaryBrush|BackgroundBrush">
+                  <Binding Path="ViewModeOptions[1].Mode"/>
+                  <Binding Path="ViewMode"/>
+                </MultiBinding>
+              </Button.Background>
+              <Button.Foreground>
+                <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="White|MutedTextBrush">
+                  <Binding Path="ViewModeOptions[1].Mode"/>
+                  <Binding Path="ViewMode"/>
+                </MultiBinding>
+              </Button.Foreground>
+            </Button>
+            <Button Padding="0,6" Margin="2,0" HorizontalContentAlignment="Center" BorderThickness="0"
+                    FontSize="11" FontWeight="Bold" Content="Pro"
+                    Command="{Binding SelectViewModeCommand}" CommandParameter="{Binding ViewModeOptions[2]}"
+                    ToolTip.Tip="{Binding ViewModeOptions[2].Description}">
+              <Button.Background>
+                <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="PrimaryBrush|BackgroundBrush">
+                  <Binding Path="ViewModeOptions[2].Mode"/>
+                  <Binding Path="ViewMode"/>
+                </MultiBinding>
+              </Button.Background>
+              <Button.Foreground>
+                <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="White|MutedTextBrush">
+                  <Binding Path="ViewModeOptions[2].Mode"/>
+                  <Binding Path="ViewMode"/>
+                </MultiBinding>
+              </Button.Foreground>
+            </Button>
+          </UniformGrid>
 
           <ListBox Margin="0,16,0,0" Background="Transparent" BorderThickness="0"
                    ItemsSource="{Binding NavItems}"
@@ -66,23 +135,34 @@
         </StackPanel>
 
         <StackPanel DockPanel.Dock="Bottom" Margin="16">
-          <Border Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}"
-                  BorderThickness="1" CornerRadius="8" Padding="0,6" Margin="0,0,0,10" HorizontalAlignment="Stretch">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-              <TextBlock Text="VIEW MODE · " Foreground="{DynamicResource MutedTextBrush}" FontSize="11"/>
-              <TextBlock Text="{Binding ViewModeLabel}" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" FontSize="11"/>
-            </StackPanel>
-          </Border>
+          <!-- Live forward-tested track record - one honest number, clickable through to the full
+               Track Record page (ShellViewModel.TrackRecordText/OpenTrackRecordCommand). Hidden
+               until at least one prediction has matured and been evaluated. -->
+          <Button Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}"
+                  BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,0,0,10" HorizontalContentAlignment="Stretch"
+                  IsVisible="{Binding TrackRecordText, Converter={StaticResource NotEmptyToVis}}"
+                  Command="{Binding OpenTrackRecordCommand}"
+                  ToolTip.Tip="See the full, honest track record - every signal type, not just Buy.">
+            <TextBlock Text="{Binding TrackRecordText}" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Foreground="{DynamicResource MutedTextBrush}" HorizontalAlignment="Center"/>
+          </Button>
           <Button Content="⟳  Refresh Data" Margin="0,0,0,8" HorizontalAlignment="Stretch" Command="{Binding RefreshCommand}"/>
           <Button Content="⚙  Settings" HorizontalAlignment="Stretch" Command="{Binding OpenSettingsCommand}"
                   Classes.active="{Binding IsSettingsActive}"
                   ToolTip.Tip="Theme and difficulty mode (Beginner / Intermediate / Pro)."/>
+          <!-- Always visible, unlike the track-record badge above (which is conditionally hidden
+               until data matures) - this app makes real Buy/Hold/Avoid calls, so the disclaimer
+               shouldn't depend on whether there's been time to log a track record yet. -->
+          <TextBlock Text="For research only - not investment advice." FontSize="10" Margin="0,10,0,0"
+                     Foreground="{DynamicResource MutedTextBrush}" TextWrapping="Wrap" TextAlignment="Center"
+                     Opacity="0.7"/>
         </StackPanel>
       </DockPanel>
     </Border>
 
     <Grid Grid.Column="1">
       <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="*"/>
       </Grid.RowDefinitions>
@@ -94,7 +174,31 @@
                    Foreground="{DynamicResource PrimaryBrush}"/>
       </Border>
 
-      <ScrollViewer x:Name="ContentScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <!-- "What changed since your last visit" - watchlist signal changes, visible on every page
+           (not just Universe) since this is meant as a habit-forming "come back and see" hook, not
+           something the user has to remember to go check. -->
+      <Border Grid.Row="1" Background="{DynamicResource SurfaceBrush}"
+              BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="0,0,0,1" Padding="24,14"
+              IsVisible="{Binding HasBriefing}">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <TextBlock Grid.Column="0" Text="🔔" FontSize="16" Margin="0,0,12,0" VerticalAlignment="Top"/>
+          <StackPanel Grid.Column="1">
+            <TextBlock Text="What changed since your last visit" FontWeight="Bold" FontSize="12" Margin="0,0,0,6"/>
+            <ItemsControl ItemsSource="{Binding BriefingMessages}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,3"
+                             Foreground="{DynamicResource MutedTextBrush}"/>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+          <Button Grid.Column="2" Content="✕" Padding="6,2" VerticalAlignment="Top"
+                  Command="{Binding DismissBriefingCommand}" ToolTip.Tip="Dismiss"/>
+        </Grid>
+      </Border>
+
+      <ScrollViewer x:Name="ContentScrollViewer" Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <ContentControl Content="{Binding CurrentPage}" Margin="24" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"/>
       </ScrollViewer>
     </Grid>

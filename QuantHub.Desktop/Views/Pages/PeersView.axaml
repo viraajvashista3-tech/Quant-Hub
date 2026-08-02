@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             xmlns:controls="using:QuantHub.Desktop.Views.Controls"
              x:Class="QuantHub.Desktop.Views.Pages.PeersView">
   <UserControl.Styles>
     <Style Selector="Border.peerRow">
@@ -11,16 +12,15 @@
     </Style>
   </UserControl.Styles>
 
+  <Panel>
   <StackPanel>
 
-    <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DestructiveBrush}"
-               IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmptyToVis}}"
-               Margin="0,0,0,16" TextWrapping="Wrap"/>
+    <controls:ErrorCard Message="{Binding ErrorMessage}"/>
 
     <StackPanel IsVisible="{Binding Data, Converter={StaticResource NotEmptyToVis}}">
 
       <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-        <TextBlock Text="{Binding Data.Ticker}" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}"/>
+        <TextBlock Text="{Binding Data.Ticker}" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource ChartAccent3Brush}"/>
         <TextBlock Text="{Binding Data.Sector}" FontSize="14" Foreground="{DynamicResource MutedTextBrush}"
                    VerticalAlignment="Bottom" Margin="12,0,0,0"/>
       </StackPanel>
@@ -29,6 +29,17 @@
         <StackPanel>
           <TextBlock Text="P/E COMPARISON" Classes="cardTitle"/>
           <lvc:CartesianChart Series="{Binding ComparisonSeries}" XAxes="{Binding ComparisonXAxes}" YAxes="{Binding ComparisonYAxes}"
+                               Background="Transparent" Height="220"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Intermediate + Pro: valuation-vs-quality scatter, this tab's signature visual -->
+      <Border Classes="card" IsVisible="{Binding IsIntermediatePlus}">
+        <StackPanel IsVisible="{Binding HasValuationScatter}">
+          <TextBlock Text="VALUATION VS. QUALITY" Classes="cardTitle"/>
+          <TextBlock Text="P/E (valuation) on the horizontal axis, Return on Equity (quality) on the vertical - this stock highlighted against its peers."
+                     TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,12"/>
+          <lvc:CartesianChart Series="{Binding ValuationScatterSeries}" XAxes="{Binding ValuationScatterXAxes}" YAxes="{Binding ValuationScatterYAxes}"
                                Background="Transparent" Height="220"/>
         </StackPanel>
       </Border>
@@ -204,4 +215,6 @@
       </Border>
     </StackPanel>
   </StackPanel>
+  <controls:BusyOverlay IsBusy="{Binding IsBusy}"/>
+  </Panel>
 </UserControl>

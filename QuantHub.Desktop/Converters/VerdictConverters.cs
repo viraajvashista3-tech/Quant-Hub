@@ -1,8 +1,22 @@
 using System.Globalization;
 using Avalonia.Data.Converters;
+using Avalonia.Media;
+using QuantHub.Desktop.Services;
 using QuantHub.Desktop.Theming;
 
 namespace QuantHub.Desktop.Converters;
+
+/// <summary>Renders a SettingsService.AccentColor's "H S% L%" string as an actual swatch color, for
+/// the Settings page's accent picker - reuses SettingsService.ParseHsl rather than a second copy of
+/// the same HSL math.</summary>
+public sealed class HslToBrushConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is string hsl ? new SolidColorBrush(SettingsService.ParseHsl(hsl)) : null;
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
 
 /// <summary>Maps a SignalReason.Verdict string ("Positive"/"Negative"/"Warning"/"Neutral") to a brush.</summary>
 public sealed class VerdictToBrushConverter : IValueConverter
@@ -68,6 +82,41 @@ public sealed class TransactionTypeToBrushConverter : IValueConverter
         {
             "Purchase" => "PositiveBrush",
             "Sale" => "DestructiveBrush",
+            _ => "MutedTextBrush"
+        };
+        return ThemeResources.GetBrush(key);
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>Maps Yahoo's insider transaction ownership code ("D"/"I") to a readable label.</summary>
+public sealed class OwnershipCodeConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => (value as string) switch
+    {
+        "D" => "Direct",
+        "I" => "Indirect",
+        var other => other
+    };
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>Maps an AnalystData.ConsensusRating string to a brush - the same read
+/// AnalystViewModel.ConsensusBrush already gives the Analyst page's own consensus badge, promoted to
+/// a converter so the Watchlist and Universe Top 20 ranking tables can bind it directly from XAML too.</summary>
+public sealed class ConsensusRatingToBrushConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        var key = (value as string) switch
+        {
+            "Strong Buy" or "Buy" => "PositiveBrush",
+            "Hold" => "WarningBrush",
+            "Sell" or "Strong Sell" => "DestructiveBrush",
             _ => "MutedTextBrush"
         };
         return ThemeResources.GetBrush(key);

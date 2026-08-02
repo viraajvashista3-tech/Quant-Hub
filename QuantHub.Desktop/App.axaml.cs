@@ -7,7 +7,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media.Imaging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using QuantHub.Core.Ai;
+using QuantHub.Core.Backtesting;
 using QuantHub.Core.MarketPulse;
 using QuantHub.Core.Sentiment;
 using QuantHub.Core.Services;
@@ -39,19 +39,25 @@ public partial class App : Application
                     services.AddSingleton(_ => new SentimentService(new HttpClient { Timeout = TimeSpan.FromSeconds(15) }));
                     services.AddSingleton<StockAnalysisService>();
                     services.AddSingleton<MarketPulseService>();
-                    services.AddSingleton<ClaudeChatService>();
                     services.AddSingleton<SettingsService>();
+                    services.AddSingleton<ScoreWeightsService>();
+                    services.AddSingleton<BacktestEngine>();
+                    services.AddSingleton<AutoBacktestService>();
+                    services.AddSingleton<PredictionLogService>();
+                    services.AddSingleton<WatchlistService>();
+                    services.AddSingleton<UniverseRankingService>();
+                    services.AddSingleton<SessionBriefingService>();
                     services.AddSingleton<AppState>();
                     services.AddSingleton<TerminalViewModel>();
+                    services.AddSingleton<StockWorkspaceViewModel>();
                     services.AddSingleton<UniverseViewModel>();
                     services.AddSingleton<FundamentalsViewModel>();
                     services.AddSingleton<AnalystViewModel>();
                     services.AddSingleton<PeersViewModel>();
                     services.AddSingleton<InsiderViewModel>();
                     services.AddSingleton<MarketPulseViewModel>();
-                    services.AddSingleton<AiResearchViewModel>();
-                    services.AddSingleton<ComingSoonViewModel>();
                     services.AddSingleton<SettingsViewModel>();
+                    services.AddSingleton<TrackRecordViewModel>();
                     services.AddSingleton<ShellViewModel>();
                     services.AddSingleton<ShellWindow>();
                 })
@@ -59,6 +65,19 @@ public partial class App : Application
 
             _host.Start();
             _host.Services.GetRequiredService<SettingsService>().ApplyTheme();
+
+            // Fire-and-forget: recalibrates Quant Score weights against the last week's price
+            // history if it's been at least a week since the last check. No-ops (near-instantly)
+            // if not due yet, so this never delays startup.
+            _host.Services.GetRequiredService<AutoBacktestService>().RunInBackgroundIfDue();
+
+            // Fire-and-forget: scores any live predictions logged 14+ days ago against what SPY and
+            // the ticker actually did since. No-ops (near-instantly) if nothing is due yet.
+            _host.Services.GetRequiredService<PredictionLogService>().EvaluateMaturedInBackground();
+
+            // Fire-and-forget: re-sweeps the full universe for the Universe page's Top 20 rankings if
+            // the cached sweep is more than ~20 hours old. No-ops (near-instantly) if not due yet.
+            _host.Services.GetRequiredService<UniverseRankingService>().RunInBackgroundIfDue();
 
             var window = _host.Services.GetRequiredService<ShellWindow>();
             desktop.MainWindow = window;
