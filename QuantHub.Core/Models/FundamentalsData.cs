@@ -17,6 +17,8 @@ public sealed class FundamentalsData
     public double? ProfitMargins { get; init; }
     public double? Beta { get; init; }
     public double? DividendYield { get; init; }
+    public double? DividendRate { get; init; }
+    public double? PayoutRatio { get; init; }
     public double? Eps { get; init; }
     public double? BookValuePerShare { get; init; }
     public double? GrahamNumber { get; init; }

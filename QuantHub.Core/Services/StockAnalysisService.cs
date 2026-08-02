@@ -23,7 +23,18 @@ public sealed class StockAnalysisService(YahooFinanceClient yahoo, SentimentServ
         ["1y"] = "1y", ["5y"] = "5y"
     };
 
-    public async Task<StockOverview?> GetOverviewAsync(string ticker, CancellationToken ct = default)
+    /// <summary>Search-as-you-type ticker/company-name lookup, backing every autocomplete box in the
+    /// app. Short-circuits blank/whitespace queries before ever touching the network - callers (all
+    /// debounced) still fire this on very short input, and a 0-1 character query is never worth a
+    /// round trip.</summary>
+    public async Task<IReadOnlyList<TickerSearchResult>> SearchTickersAsync(string query, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(query)) return [];
+        var result = await yahoo.SearchAsync(query, ct);
+        return result is { } r ? TickerSearchParser.Parse(r) : [];
+    }
+
+    public async Task<StockOverview?> GetOverviewAsync(string ticker, QuantScoreCalculator.Weights? weights = null, CancellationToken ct = default)
     {
         var upper = ticker.ToUpperInvariant();
         var barsTask = yahoo.GetChartAsync(upper, "1y", ct);
@@ -48,6 +59,10 @@ public sealed class StockAnalysisService(YahooFinanceClient yahoo, SentimentServ
         var macd = macdArr[^1] ?? 0.0;
         var macdSignal = signalArr[^1] ?? 0.0;
         var rsi = Indicators.Rsi(closes)[^1] ?? 50.0;
+        var (bbUpperArr, bbLowerArr, _) = Indicators.BollingerBands(closes);
+        var bbUpper = bbUpperArr[^1];
+        var bbLower = bbLowerArr[^1];
+        var roc21Pct = closes.Length > 21 ? (closes[^1] - closes[^22]) / closes[^22] * 100 : (double?)null;
 
         var latestVolume = volumes[^1];
         var avgVolumeFull = (long)volumes.Average(v => (double)v);
@@ -66,10 +81,12 @@ public sealed class StockAnalysisService(YahooFinanceClient yahoo, SentimentServ
         }
 
         var sentimentResult = sentimentTask.Result;
+        var sentimentWeight = SectorSentimentWeights.ForSector(sector);
 
         var score = QuantScoreCalculator.Calculate(
             latestClose, ma50, ma200, rsi, macd, macdSignal,
-            latestVolume, volumes, avgVolumeFull, sentimentResult.AverageScore);
+            latestVolume, volumes, avgVolumeFull, bbUpper, bbLower, roc21Pct,
+            sentimentResult.AverageScore, weights, sentimentWeight);
 
         var annVol = Indicators.AnnualizedVolatility(closes);
         var sharpe = Indicators.SharpeRatio(closes);
@@ -101,6 +118,11 @@ public sealed class StockAnalysisService(YahooFinanceClient yahoo, SentimentServ
             MomentumScore = Math.Round(score.MomentumScore, 2),
             MacdScore = Math.Round(score.MacdScore, 2),
             SentimentContrib = score.SentimentContrib,
+            SentimentWeightMultiplier = sentimentWeight,
+            MeanReversionScore = Math.Round(score.MeanReversionScore, 2),
+            PriceMomentumScore = Math.Round(score.PriceMomentumScore, 2),
+            BollingerPctB = bbUpper is { } u && bbLower is { } l && u > l ? Math.Round((latestClose - l) / (u - l), 4) : null,
+            PriceRoc21Pct = roc21Pct is { } r ? Math.Round(r, 2) : null,
             VolScore = Math.Round(score.VolScore, 2),
             VolRatio = Math.Round(score.VolRatio, 3),
             AboveMa50 = score.AboveMa50,
@@ -156,6 +178,13 @@ public sealed class StockAnalysisService(YahooFinanceClient yahoo, SentimentServ
         return result is { } r ? FundamentalsAnalyzer.Build(upper, r) : null;
     }
 
+    public async Task<EarningsData?> GetEarningsAsync(string ticker, CancellationToken ct = default)
+    {
+        var upper = ticker.ToUpperInvariant();
+        var result = await yahoo.GetQuoteSummaryAsync(upper, EarningsAnalyzer.Modules, ct);
+        return result is { } r ? EarningsAnalyzer.Build(upper, r) : null;
+    }
+
     public async Task<NewsData> GetNewsAsync(string ticker, CancellationToken ct = default)
     {
         var upper = ticker.ToUpperInvariant();
@@ -189,20 +218,62 @@ public sealed class StockAnalysisService(YahooFinanceClient yahoo, SentimentServ
         return InsiderAnalyzer.Build(upper, r, name);
     }
 
+    /// <summary>Resolves a ticker's sector + same-sector peer tickers via PeersAnalyzer, falling
+    /// back to Yahoo's own assetProfile sector (matched against UniverseData) for tickers outside
+    /// the hardcoded 11-sector universe. Shared by GetPeersAsync and GetSimilarStocksAsync so both
+    /// "peers" and "similar stocks" mean the same thing throughout the app.</summary>
+    private async Task<(string Sector, IReadOnlyList<string> Peers)> ResolveSectorAndPeersAsync(string upper, CancellationToken ct)
+    {
+        var (sector, peers) = PeersAnalyzer.GetPeersForTicker(upper);
+        if (sector is not null) return (sector, peers);
+
+        var subjectInfo = await yahoo.GetQuoteSummaryAsync(upper, ["assetProfile"], ct);
+        var yahooSector = subjectInfo is { } si ? YahooJson.Str(si, "assetProfile", "sector") : null;
+        sector = yahooSector ?? "Unknown";
+        var sectorEntry = Universe.UniverseData.Sectors.FirstOrDefault(s => s.Sector == sector);
+        peers = sectorEntry.Tickers?.Where(t => t != upper).ToArray() ?? [];
+        return (sector, peers);
+    }
+
+    /// <summary>Lightweight "similar stocks" lookup for the Universe page - same-sector peers as
+    /// GetPeersAsync, but only a quick current-price/change quote per ticker (no full price history,
+    /// no correlation matrix) since the Universe cards just need a snapshot, not charts.</summary>
+    public async Task<IReadOnlyList<SimilarStock>> GetSimilarStocksAsync(string ticker, int count = 6, CancellationToken ct = default)
+    {
+        var upper = ticker.ToUpperInvariant();
+        var (sector, peers) = await ResolveSectorAndPeersAsync(upper, ct);
+        var candidates = peers.Take(count).ToList();
+
+        var results = new SimilarStock[candidates.Count];
+        await Parallel.ForEachAsync(Enumerable.Range(0, candidates.Count), ct, async (i, token) =>
+        {
+            var t = candidates[i];
+            var barsTask = yahoo.GetChartAsync(t, "5d", token);
+            var infoTask = yahoo.GetQuoteSummaryAsync(t, ["price"], token);
+            await Task.WhenAll(barsTask, infoTask);
+
+            double? price = null;
+            double? changePct = null;
+            if (barsTask.Result is { Count: > 0 } bars)
+            {
+                var closes = bars.Select(b => b.Close).ToArray();
+                price = closes[^1];
+                if (closes.Length > 1 && closes[^2] != 0) changePct = (closes[^1] - closes[^2]) / closes[^2] * 100;
+            }
+
+            var name = infoTask.Result is { } info ? YahooJson.Str(info, "price", "shortName") : null;
+            results[i] = new SimilarStock { Ticker = t, Name = name, Sector = sector, Price = price, ChangePercent = changePct };
+        });
+
+        return results;
+    }
+
     public async Task<PeersData> GetPeersAsync(string ticker, string period, CancellationToken ct = default)
     {
         var upper = ticker.ToUpperInvariant();
         var yfPeriod = PeersPeriodMap.GetValueOrDefault(period, "1y");
 
-        var (sector, peers) = PeersAnalyzer.GetPeersForTicker(upper);
-        if (sector is null)
-        {
-            var subjectInfo = await yahoo.GetQuoteSummaryAsync(upper, ["assetProfile"], ct);
-            var yahooSector = subjectInfo is { } si ? YahooJson.Str(si, "assetProfile", "sector") : null;
-            sector = yahooSector ?? "Unknown";
-            var sectorEntry = Universe.UniverseData.Sectors.FirstOrDefault(s => s.Sector == sector);
-            peers = sectorEntry.Tickers?.Where(t => t != upper).ToArray() ?? [];
-        }
+        var (sector, peers) = await ResolveSectorAndPeersAsync(upper, ct);
 
         var compareList = new List<string> { upper };
         compareList.AddRange(peers.Take(6));

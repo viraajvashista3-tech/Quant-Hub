@@ -95,4 +95,45 @@ public class AnalystAnalyzerTests
         Assert.Equal("up", action.Action);
         Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(1700000000).UtcDateTime.ToString("yyyy-MM-dd"), action.Date);
     }
+
+    [Theory]
+    [InlineData(160, 150.5, 6.31)]
+    [InlineData(100, 150.5, -33.55)]
+    public void UpsidePotentialPct_ComputesPercentFromCurrentPrice(double target, double price, double expected)
+    {
+        Assert.Equal(expected, AnalystAnalyzer.UpsidePotentialPct(target, price)!.Value, 2);
+    }
+
+    [Fact]
+    public void UpsidePotentialPct_NullTarget_ReturnsNull()
+    {
+        Assert.Null(AnalystAnalyzer.UpsidePotentialPct(null, 150.5));
+    }
+
+    [Fact]
+    public void UpsidePotentialPct_NullPrice_ReturnsNull()
+    {
+        Assert.Null(AnalystAnalyzer.UpsidePotentialPct(160, null));
+    }
+
+    [Fact]
+    public void UpsidePotentialPct_ZeroOrNegativePrice_ReturnsNull()
+    {
+        Assert.Null(AnalystAnalyzer.UpsidePotentialPct(160, 0));
+        Assert.Null(AnalystAnalyzer.UpsidePotentialPct(160, -10));
+    }
+
+    [Theory]
+    [InlineData("Strong Buy", 0)]
+    [InlineData("Buy", 1)]
+    [InlineData("Hold", 2)]
+    [InlineData("Sell", 3)]
+    [InlineData("Strong Sell", 4)]
+    [InlineData("N/A", 5)]
+    [InlineData(null, 5)]
+    [InlineData("garbage", 5)]
+    public void ConsensusRatingRank_OrdersBestToBuyFirst(string? rating, int expected)
+    {
+        Assert.Equal(expected, AnalystAnalyzer.ConsensusRatingRank(rating));
+    }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Text.Json;
 
@@ -18,6 +19,18 @@ public sealed class YahooFinanceClient(HttpClient http)
 {
     private string? _crumb;
     private readonly SemaphoreSlim _crumbLock = new(1, 1);
+
+    // Short-TTL response cache: the real cost this addresses is switching between pages for the
+    // *same* active ticker (Terminal -> Fundamentals -> Analyst -> Peers -> Insider each
+    // independently re-fetch chart/quoteSummary data for whatever ticker is currently active), not
+    // long-lived staleness. 60s is short enough that the shell's explicit Refresh button still feels
+    // meaningfully fresh in virtually every realistic click pattern, while being long enough to make
+    // rapid same-ticker page-switching feel instant instead of re-fetching from scratch every time.
+    // Only successful (non-null) responses are cached - a transient failure is never "stuck" for the
+    // TTL window, it just retries on the very next call.
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(60);
+    private readonly ConcurrentDictionary<string, (DateTime ExpiresAtUtc, IReadOnlyList<Bar> Value)> _chartCache = new();
+    private readonly ConcurrentDictionary<string, (DateTime ExpiresAtUtc, JsonElement Value)> _quoteSummaryCache = new();
 
     public static HttpClient CreateDefaultHttpClient()
     {
@@ -85,6 +98,17 @@ public sealed class YahooFinanceClient(HttpClient http)
     /// <summary>range: "ytd" | "6mo" | "1y" | "2y" | "5y" | "1mo" (matching Yahoo's chart range values).</summary>
     public async Task<IReadOnlyList<Bar>?> GetChartAsync(string symbol, string range, CancellationToken ct = default)
     {
+        var cacheKey = $"{symbol}:{range}";
+        if (_chartCache.TryGetValue(cacheKey, out var cached) && cached.ExpiresAtUtc > DateTime.UtcNow)
+            return cached.Value;
+
+        var bars = await FetchChartAsync(symbol, range, ct);
+        if (bars is not null) _chartCache[cacheKey] = (DateTime.UtcNow + CacheTtl, bars);
+        return bars;
+    }
+
+    private async Task<IReadOnlyList<Bar>?> FetchChartAsync(string symbol, string range, CancellationToken ct)
+    {
         var url = $"https://query1.finance.yahoo.com/v8/finance/chart/{Uri.EscapeDataString(symbol)}?range={range}&interval=1d";
         using var resp = await GetWithCrumbAsync(url, ct);
         if (!resp.IsSuccessStatusCode) return null;
@@ -129,8 +153,39 @@ public sealed class YahooFinanceClient(HttpClient http)
         return bars;
     }
 
+    /// <summary>Ticker/company-name search-as-you-type (v1/finance/search) - returns raw {"quotes":
+    /// [...]} JSON for TickerSearchParser.Parse to filter/map. A blank query still round-trips to
+    /// Yahoo (unlike StockAnalysisService.SearchTickersAsync, which short-circuits before calling this
+    /// at all) since this client is a thin transport layer with no query-shape opinions of its own,
+    /// matching GetChartAsync/GetQuoteSummaryAsync.</summary>
+    public async Task<JsonElement?> SearchAsync(string query, CancellationToken ct = default)
+    {
+        var url = $"https://query1.finance.yahoo.com/v1/finance/search?q={Uri.EscapeDataString(query)}&quotesCount=8&newsCount=0";
+        using var resp = await GetWithCrumbAsync(url, ct);
+        if (!resp.IsSuccessStatusCode) return null;
+
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct);
+        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+        return doc.RootElement.Clone();
+    }
+
     /// <summary>Returns the first (and only) quoteSummary result object, containing every requested module keyed by module name.</summary>
     public async Task<JsonElement?> GetQuoteSummaryAsync(string symbol, IEnumerable<string> modules, CancellationToken ct = default)
+    {
+        // Materialized once (not just enumerated) since it's read twice below (cache key + fetch) -
+        // a lazily-evaluated caller-supplied IEnumerable could otherwise yield different results, or
+        // nothing at all, on its second enumeration.
+        var moduleList = modules as IReadOnlyList<string> ?? modules.ToList();
+        var cacheKey = $"{symbol}:{string.Join(",", moduleList.OrderBy(m => m, StringComparer.Ordinal))}";
+        if (_quoteSummaryCache.TryGetValue(cacheKey, out var cached) && cached.ExpiresAtUtc > DateTime.UtcNow)
+            return cached.Value;
+
+        var result = await FetchQuoteSummaryAsync(symbol, moduleList, ct);
+        if (result is { } r) _quoteSummaryCache[cacheKey] = (DateTime.UtcNow + CacheTtl, r);
+        return result;
+    }
+
+    private async Task<JsonElement?> FetchQuoteSummaryAsync(string symbol, IReadOnlyList<string> modules, CancellationToken ct)
     {
         var moduleParam = string.Join(",", modules);
         var url = $"https://query1.finance.yahoo.com/v10/finance/quoteSummary/{Uri.EscapeDataString(symbol)}?modules={moduleParam}";

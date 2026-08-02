@@ -39,6 +39,42 @@ public class IndicatorsTests
     }
 
     [Fact]
+    public void RollingVolumeRatio_IsNullUntilWindowFills()
+    {
+        long[] volumes = [10, 20, 30];
+        var ratio = Indicators.RollingVolumeRatio(volumes, window: 3);
+
+        Assert.Null(ratio[0]);
+        Assert.Null(ratio[1]);
+        Assert.Equal(30.0 / 20.0, ratio[2]!.Value, 6); // avg(10,20,30)=20, latest=30
+    }
+
+    [Fact]
+    public void RollingVolumeRatio_IsCausal_LaterBarsDontAffectEarlierRatios()
+    {
+        // The ratio at index 2 (window=3) must depend only on bars 0-2, matching what
+        // BacktestEngine needs to avoid leaking future volume into a historical bar's score.
+        long[] shortSeries = [10, 20, 30];
+        long[] longerSeries = [10, 20, 30, 1_000_000]; // huge future spike appended
+
+        var ratioShort = Indicators.RollingVolumeRatio(shortSeries, window: 3);
+        var ratioLong = Indicators.RollingVolumeRatio(longerSeries, window: 3);
+
+        Assert.Equal(ratioShort[2], ratioLong[2]);
+    }
+
+    [Fact]
+    public void RollingVolumeRatio_SlidesTheWindowForward()
+    {
+        long[] volumes = [100, 100, 100, 50, 50, 50];
+        var ratio = Indicators.RollingVolumeRatio(volumes, window: 3);
+
+        Assert.Equal(1.0, ratio[2]!.Value, 6); // window=[100,100,100], avg=100, latest=100
+        Assert.Equal(50.0 / (250.0 / 3), ratio[3]!.Value, 6); // window=[100,100,50], avg=83.33, latest=50
+        Assert.Equal(1.0, ratio[5]!.Value, 6); // window has fully slid to [50,50,50], avg=50, latest=50
+    }
+
+    [Fact]
     public void Rsi_ApproachesZeroOnPureDowntrend()
     {
         double[] closes = [45.0, 44.75, 44.5, 44.25, 44.0];

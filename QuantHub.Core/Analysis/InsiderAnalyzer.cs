@@ -13,7 +13,7 @@ namespace QuantHub.Core.Analysis;
 public static class InsiderAnalyzer
 {
     public static readonly string[] Modules =
-        ["price", "assetProfile", "defaultKeyStatistics", "insiderTransactions", "netSharePurchaseActivity"];
+        ["price", "assetProfile", "defaultKeyStatistics", "insiderTransactions", "netSharePurchaseActivity", "institutionOwnership"];
 
     public static InsiderData Build(string ticker, JsonElement result, string? name)
     {
@@ -67,6 +67,25 @@ public static class InsiderAnalyzer
         var sells = transactions.Count(t => t.TransactionType == "Sale");
         var netSentiment = buys > sells ? "Net Buyers" : sells > buys ? "Net Sellers" : "Neutral";
 
+        var holders = new List<InstitutionalHolder>();
+        if (result.TryGetProperty("institutionOwnership", out var ioMod) &&
+            ioMod.TryGetProperty("ownershipList", out var holderArr) && holderArr.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var row in holderArr.EnumerateArray().Take(10))
+            {
+                var org = GetRawString(row, "organization");
+                if (string.IsNullOrEmpty(org)) continue;
+                holders.Add(new InstitutionalHolder
+                {
+                    Organization = org,
+                    PctHeld = row.TryGetProperty("pctHeld", out var ph) ? ExtractRawDouble(ph) : null,
+                    Position = row.TryGetProperty("position", out var pos) ? ExtractRawLong(pos) : null,
+                    Value = row.TryGetProperty("value", out var val2) ? ExtractRawDouble(val2) : null,
+                    PctChange = row.TryGetProperty("pctChange", out var pc) ? ExtractRawDouble(pc) : null
+                });
+            }
+        }
+
         return new InsiderData
         {
             Ticker = upper,
@@ -77,7 +96,8 @@ public static class InsiderAnalyzer
             BuyCount = buys,
             SellCount = sells,
             Purchases6m = purchases6m,
-            Transactions = transactions
+            Transactions = transactions,
+            TopInstitutionalHolders = holders
         };
     }
 

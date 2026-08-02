@@ -116,6 +116,28 @@ public static class Indicators
         return (upper, lower, ma20);
     }
 
+    /// <summary>Causal rolling volume ratio (today's volume / trailing N-day average, ending at
+    /// each index) - null until `window` bars have accumulated. Unlike QuantScoreCalculator's live
+    /// vol-ratio (which falls back to a full-period average for tickers with &lt;20 bars total),
+    /// this has no fallback: it's only used by BacktestEngine, where every sample index already has
+    /// hundreds of prior bars (gated by requiring MA200), so the fallback path never applies.</summary>
+    public static double?[] RollingVolumeRatio(IReadOnlyList<long> volumes, int window = 20)
+    {
+        var result = new double?[volumes.Count];
+        double sum = 0;
+        for (var i = 0; i < volumes.Count; i++)
+        {
+            sum += volumes[i];
+            if (i >= window) sum -= volumes[i - window];
+            if (i >= window - 1)
+            {
+                var avg = sum / window;
+                result[i] = avg > 0 ? volumes[i] / avg : 1.0;
+            }
+        }
+        return result;
+    }
+
     public static double[] DailyReturns(IReadOnlyList<double> closes)
     {
         if (closes.Count < 2) return [];

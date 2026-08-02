@@ -22,4 +22,18 @@ public static class UniverseData
 
     public static IReadOnlyList<UniverseSector> AsSectors() =>
         Sectors.Select(s => new UniverseSector { Sector = s.Sector, Tickers = s.Tickers }).ToList();
+
+    /// <summary>All 128 tickers across every sector, flattened - the full backtestable universe
+    /// (BacktestEngine/BacktestViewModel/AutoBacktestService all use this rather than a per-sector
+    /// sample, so every sector's peer set is complete for RelativeStrengthSignal's cross-sectional
+    /// comparisons).</summary>
+    public static readonly IReadOnlyList<string> AllTickers =
+        Sectors.SelectMany(s => s.Tickers).ToList();
+
+    /// <summary>Well-known large-cap tickers shown on the Universe page's watchlist section in place
+    /// of an empty table when the user hasn't added anything of their own yet (WatchlistService starts
+    /// empty by design). All eight already belong to Sectors above, so peer/sector lookups behave the
+    /// same for them as for any user-picked ticker.</summary>
+    public static readonly IReadOnlyList<string> DefaultTickers =
+        ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "JPM", "WMT"];
 }

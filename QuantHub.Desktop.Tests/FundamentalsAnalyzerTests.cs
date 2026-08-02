@@ -69,4 +69,35 @@ public class FundamentalsAnalyzerTests
         Assert.Equal("Technology", f.Sector);
         Assert.Equal("Software", f.Industry);
     }
+
+    [Fact]
+    public void Build_ReadsDividendYieldRateAndPayoutRatioFromSummaryDetail()
+    {
+        var result = Parse("""
+        {
+            "summaryDetail": {
+                "dividendYield": { "raw": 0.025 },
+                "dividendRate": { "raw": 1.92 },
+                "payoutRatio": { "raw": 0.35 }
+            }
+        }
+        """);
+
+        var f = FundamentalsAnalyzer.Build("test", result);
+
+        Assert.Equal(0.025, f.DividendYield);
+        Assert.Equal(1.92, f.DividendRate);
+        Assert.Equal(0.35, f.PayoutRatio);
+    }
+
+    [Fact]
+    public void Build_MissingDividendFields_AllNull()
+    {
+        var result = Parse("{ \"summaryDetail\": {} }");
+        var f = FundamentalsAnalyzer.Build("test", result);
+
+        Assert.Null(f.DividendYield);
+        Assert.Null(f.DividendRate);
+        Assert.Null(f.PayoutRatio);
+    }
 }

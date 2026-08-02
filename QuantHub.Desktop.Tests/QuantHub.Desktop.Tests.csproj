@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\QuantHub.Core\QuantHub.Core.csproj" />
+    <ProjectReference Include="..\QuantHub.Desktop\QuantHub.Desktop.csproj" />
   </ItemGroup>
 
 </Project>

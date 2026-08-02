@@ -33,6 +33,11 @@ public sealed class StockOverview
     public double? MomentumScore { get; init; }
     public double? MacdScore { get; init; }
     public double? SentimentContrib { get; init; }
+    public double? SentimentWeightMultiplier { get; init; }
+    public double? MeanReversionScore { get; init; }
+    public double? PriceMomentumScore { get; init; }
+    public double? BollingerPctB { get; init; }
+    public double? PriceRoc21Pct { get; init; }
     public double? VolScore { get; init; }
     public double? VolRatio { get; init; }
     public bool? AboveMa50 { get; init; }

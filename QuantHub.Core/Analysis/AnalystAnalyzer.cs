@@ -96,6 +96,30 @@ public static class AnalystAnalyzer
         };
     }
 
+    /// <summary>Percent upside (positive) or downside (negative) the average analyst price target
+    /// implies versus the current price - null if either input is missing or the price is non-positive
+    /// (a degenerate base for a percentage). Shared by AnalystViewModel's Beginner summary, the
+    /// Watchlist ranking table, and the Universe Top 20 ranking, so all three read "upside" the same
+    /// way.</summary>
+    public static double? UpsidePotentialPct(double? targetMean, double? currentPrice) =>
+        targetMean is { } target && currentPrice is { } price && price > 0
+            ? (target - price) / price * 100
+            : null;
+
+    /// <summary>Ordinal "best to buy first" rank for a consensus rating string - lower is more bullish.
+    /// Unrecognized values (including Yahoo's own "N/A" fallback and a missing/null rating) sort last
+    /// rather than erroring, so a ticker with no analyst coverage still has a well-defined position at
+    /// the bottom of an AnalystRating-sorted list instead of being silently dropped.</summary>
+    public static int ConsensusRatingRank(string? consensusRating) => consensusRating switch
+    {
+        "Strong Buy" => 0,
+        "Buy" => 1,
+        "Hold" => 2,
+        "Sell" => 3,
+        "Strong Sell" => 4,
+        _ => 5
+    };
+
     private static string? GetString(JsonElement el, string field) =>
         el.TryGetProperty(field, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
 

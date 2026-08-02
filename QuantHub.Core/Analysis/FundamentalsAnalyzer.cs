@@ -40,6 +40,8 @@ public static class FundamentalsAnalyzer
             ProfitMargins = Raw("profitMargins"),
             Beta = Raw("beta"),
             DividendYield = Raw("dividendYield"),
+            DividendRate = Raw("dividendRate"),
+            PayoutRatio = Raw("payoutRatio"),
             Eps = eps,
             BookValuePerShare = bvps,
             GrahamNumber = graham,

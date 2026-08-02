@@ -26,12 +26,13 @@ public enum AppTheme
 
 public sealed record AccentColor(string Name, string Hsl, string Label);
 
+public sealed record ViewModeOption(ViewMode Mode, string Label, string Description);
+
 public sealed class AppSettings
 {
     public ViewMode ViewMode { get; set; } = ViewMode.Intermediate;
     public AppTheme Theme { get; set; } = AppTheme.Dark;
     public string AccentName { get; set; } = "cyan";
-    public string ClaudeApiKey { get; set; } = "";
 }
 
 /// <summary>Native replacement for ProModeContext/ThemeContext + localStorage: persists view mode,
@@ -40,15 +41,27 @@ public sealed class AppSettings
 /// re-render.</summary>
 public sealed partial class SettingsService : ObservableObject
 {
-    public static readonly IReadOnlyList<AccentColor> AccentColors =
-    [
-        new AccentColor("cyan", "190 100% 50%", "Cyan"),
-        new AccentColor("green", "142 70% 45%", "Green"),
-        new AccentColor("amber", "40 90% 55%", "Amber"),
-        new AccentColor("violet", "270 80% 60%", "Violet"),
-        new AccentColor("rose", "345 85% 60%", "Rose"),
-        new AccentColor("blue", "210 90% 55%", "Blue")
-    ];
+    // Concrete List<T>, not a `[...]` collection expression: collection expressions targeting an
+    // interface type (IReadOnlyList<T> here) get backed by the compiler's `<>z__ReadOnlyArray<T>`,
+    // which has no reflectable `Item` indexer property - Avalonia's `{Binding Foo[n]}` XAML syntax
+    // resolves that to null instead of throwing, so a bound CommandParameter silently becomes null.
+    // List<T> has a real Item property and binds correctly.
+    public static readonly IReadOnlyList<AccentColor> AccentColors = new List<AccentColor>
+    {
+        new("cyan", "190 100% 50%", "Cyan"),
+        new("green", "142 70% 45%", "Green"),
+        new("amber", "40 90% 55%", "Amber"),
+        new("violet", "270 80% 60%", "Violet"),
+        new("rose", "345 85% 60%", "Rose"),
+        new("blue", "210 90% 55%", "Blue")
+    };
+
+    public static readonly IReadOnlyList<ViewModeOption> ViewModeOptions = new List<ViewModeOption>
+    {
+        new(ViewMode.Beginner, "Beginner", "Plain-English guidance with a simplified chart - no jargon, no raw numbers."),
+        new(ViewMode.Intermediate, "Intermediate", "The full technical chart, RSI, and key metrics."),
+        new(ViewMode.Pro, "Pro", "Everything in Intermediate plus the score breakdown, Bollinger Bands, and detailed reasoning.")
+    };
 
     private readonly string _path;
 
@@ -57,9 +70,6 @@ public sealed partial class SettingsService : ObservableObject
 
     [ObservableProperty]
     private AppTheme _theme;
-
-    [ObservableProperty]
-    private string _claudeApiKey = "";
 
     public string AccentName { get; set; }
 
@@ -73,7 +83,6 @@ public sealed partial class SettingsService : ObservableObject
         _viewMode = loaded.ViewMode;
         _theme = loaded.Theme;
         AccentName = loaded.AccentName;
-        _claudeApiKey = loaded.ClaudeApiKey;
     }
 
     partial void OnViewModeChanged(ViewMode value) => Save();
@@ -83,8 +92,6 @@ public sealed partial class SettingsService : ObservableObject
         ApplyTheme();
         Save();
     }
-
-    partial void OnClaudeApiKeyChanged(string value) => Save();
 
     /// <summary>Swaps the app's theme variant - Avalonia re-resolves every DynamicResource /
     /// ThemeDictionaries lookup (Colors.axaml) automatically from this one property, and
@@ -133,7 +140,7 @@ public sealed partial class SettingsService : ObservableObject
     {
         try
         {
-            var current = new AppSettings { ViewMode = ViewMode, Theme = Theme, AccentName = AccentName, ClaudeApiKey = ClaudeApiKey };
+            var current = new AppSettings { ViewMode = ViewMode, Theme = Theme, AccentName = AccentName };
             var json = JsonSerializer.Serialize(current, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_path, json);
         }
@@ -154,8 +161,10 @@ public sealed partial class SettingsService : ObservableObject
     }
 
     /// <summary>Parses the "H S% L%" HSL triples AccentColors is defined in (e.g. "190 100% 50%")
-    /// into an Avalonia Color - avoids needing a second, RGB-hex copy of the same six accents.</summary>
-    private static Color ParseHsl(string hsl)
+    /// into an Avalonia Color - avoids needing a second, RGB-hex copy of the same six accents.
+    /// Internal (not private) so the Settings page's accent-swatch converter can reuse the exact same
+    /// parsing instead of duplicating it.</summary>
+    internal static Color ParseHsl(string hsl)
     {
         var parts = hsl.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var h = double.Parse(parts[0]);
