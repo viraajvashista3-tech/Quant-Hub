@@ -38,4 +38,15 @@ public class SettingsViewModelTests
 
         Assert.Equal(["NVDA", "AMD"], parsed);
     }
+
+    [Fact]
+    public void VersionText_MatchesTheDesktopAssemblysOwnVersion()
+    {
+        // Reads the version from QuantHub.Desktop's own assembly metadata (typeof(...).Assembly,
+        // not GetExecutingAssembly() - this test project is a separate assembly) rather than
+        // hardcoding an expected string, so it stays correct across version bumps.
+        var expectedVersion = typeof(SettingsViewModel).Assembly.GetName().Version!.ToString(3);
+
+        Assert.Equal($"Quant Terminal v{expectedVersion}", SettingsViewModel.VersionText);
+    }
 }
