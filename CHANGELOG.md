@@ -10,6 +10,8 @@ All notable changes to this project are documented here. Format loosely follows
   resetting to AAPL.
 - A "Startup Page" setting (Last Viewed / Terminal / Universe / Track Record) - the app can now
   open wherever you actually want it to.
+- A configurable auto-refresh interval (Off / 1 min / 5 min / 15 min) for anyone who leaves the
+  app open on a second monitor.
 
 ## [1.0.0] — 2026-08-03
 

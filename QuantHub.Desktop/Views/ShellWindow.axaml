@@ -46,7 +46,7 @@
                                 Background="Transparent" BorderThickness="0" FontSize="15" FontWeight="Bold"
                                 VerticalAlignment="Center" Padding="10,0,10,0"
                                 Watermark="Type any ticker or company name"
-                                ToolTip.Tip="Type any ticker symbol or company name - every page updates instantly.">
+                                ToolTip.Tip="Type any ticker symbol or company name - every page updates instantly. Press &quot;/&quot; from anywhere to jump here.">
                 <AutoCompleteBox.ItemTemplate>
                   <DataTemplate>
                     <StackPanel Orientation="Horizontal" Margin="4">
@@ -146,7 +146,8 @@
             <TextBlock Text="{Binding TrackRecordText}" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap"
                        Foreground="{DynamicResource MutedTextBrush}" HorizontalAlignment="Center"/>
           </Button>
-          <Button Content="⟳  Refresh Data" Margin="0,0,0,8" HorizontalAlignment="Stretch" Command="{Binding RefreshCommand}"/>
+          <Button Content="⟳  Refresh Data" Margin="0,0,0,8" HorizontalAlignment="Stretch" Command="{Binding RefreshCommand}"
+                  ToolTip.Tip="Refresh the current page. Shortcut: F5"/>
           <Button Content="⚙  Settings" HorizontalAlignment="Stretch" Command="{Binding OpenSettingsCommand}"
                   Classes.active="{Binding IsSettingsActive}"
                   ToolTip.Tip="Theme and difficulty mode (Beginner / Intermediate / Pro)."/>

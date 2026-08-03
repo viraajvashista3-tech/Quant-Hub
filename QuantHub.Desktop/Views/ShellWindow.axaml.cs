@@ -51,6 +51,17 @@ public partial class ShellWindow : Window
             tickerBox.Focus();
             e.Handled = true;
         }, RoutingStrategies.Tunnel);
+
+        // F5 refreshes the current page from anywhere, including while TickerBox has focus - unlike
+        // "/" above, there's no legitimate text-entry meaning for F5 to protect, so no source guard
+        // is needed. Same tunnel routing as "/" so an AutoCompleteBox's focus can't swallow it either
+        // (see avalonia_migration_gotchas gotcha #7).
+        AddHandler(KeyDownEvent, (_, e) =>
+        {
+            if (e.Key != Key.F5 || e.KeyModifiers != KeyModifiers.None) return;
+            if (viewModel.RefreshCommand.CanExecute(null)) viewModel.RefreshCommand.Execute(null);
+            e.Handled = true;
+        }, RoutingStrategies.Tunnel);
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
