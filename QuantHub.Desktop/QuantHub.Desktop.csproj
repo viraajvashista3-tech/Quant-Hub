@@ -38,7 +38,7 @@
     <PackageReference Include="FluentAvaloniaUI" Version="2.4.1" />
     <PackageReference Include="LiveChartsCore.SkiaSharpView.Avalonia" Version="2.0.5" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.10" />
   </ItemGroup>
 
   <!-- Packaging: a single self-contained .exe with no .NET runtime install required. Scoped to
