@@ -5,22 +5,6 @@ All notable changes to this project are documented here. Format loosely follows
 
 ## [Unreleased]
 
-### Added
-- In-app update check: once a day, the Settings page shows a quiet banner if a newer version has
-  been published to GitHub Releases, with a one-click link to download it.
-- CI now collects and uploads code coverage as a build artifact.
-
-### Fixed
-- Market Pulse's sector-rotation note could render nonsense like "+-0.3%" on a red week where
-  every sector was down.
-- The Analyst page's recommendation-trend table showed a literal "0m" for the current period
-  instead of "Current".
-- The Peers page's auto-generated comparison summary was lowercasing embedded company names,
-  sector names, and "P/E" mid-sentence (e.g. "Apple Inc." → "Apple inc.").
-- The app window had no icon reachable at runtime (taskbar/title bar/Alt+Tab).
-- `YahooFinanceClient` now retries on HTTP 429/503 instead of treating a rate limit the same as
-  "no data".
-
 ## [1.0.0] — 2026-08-03
 
 First release of the native Windows desktop version.
@@ -44,10 +28,24 @@ First release of the native Windows desktop version.
 - Light/dark theme with configurable accent color; Beginner/Intermediate/Pro difficulty modes.
 - Version metadata, an About card (Settings page), and crash logging to
   `%LOCALAPPDATA%\QuantHub\crash.log`.
-- CI (GitHub Actions): build + full test suite on every push/PR to `main`.
+- In-app update check: once a day, the Settings page shows a quiet banner if a newer version has
+  been published to GitHub Releases, with a one-click link to download it.
+- CI (GitHub Actions): build + full test suite (with code coverage collection) on every push/PR
+  to `main`.
 - Tag-triggered release pipeline: publishes a self-contained win-x64 build as both a portable
   zip and a proper Inno Setup installer (Start Menu shortcut, uninstaller), attached to an
   auto-generated GitHub Release.
+
+### Fixed
+- Market Pulse's sector-rotation note could render nonsense like "+-0.3%" on a red week where
+  every sector was down.
+- The Analyst page's recommendation-trend table showed a literal "0m" for the current period
+  instead of "Current".
+- The Peers page's auto-generated comparison summary was lowercasing embedded company names,
+  sector names, and "P/E" mid-sentence (e.g. "Apple Inc." → "Apple inc.").
+- The app window had no icon reachable at runtime (taskbar/title bar/Alt+Tab).
+- `YahooFinanceClient` now retries on HTTP 429/503 instead of treating a rate limit the same as
+  "no data".
 
 ### Changed
 - Repositioned the app around transparency rather than prediction confidence: hero copy is

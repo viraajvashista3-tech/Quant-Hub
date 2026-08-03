@@ -49,10 +49,23 @@ jobs:
           "/DMyAppVersion=${{ steps.version.outputs.number }}"
           "/DPublishDir=../QuantHub.Desktop/bin/Release/net8.0/win-x64/publish"
 
+      - name: Extract this version's CHANGELOG section for the release body
+        shell: pwsh
+        run: >
+          $v = '${{ steps.version.outputs.number }}';
+
+          $pattern = "(?ms)^## \[$([regex]::Escape($v))\].*?(?=^## \[|\z)";
+
+          $m = [regex]::Match((Get-Content -Raw CHANGELOG.md), $pattern);
+
+          $body = if ($m.Success) { $m.Value.Trim() } else { "See CHANGELOG.md for details." };
+
+          Set-Content -Path release-notes.md -Value $body -Encoding utf8
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             QuantTerminal-${{ github.ref_name }}-win-x64.zip
             installer/output/QuantTerminalSetup-${{ steps.version.outputs.number }}.exe
-          generate_release_notes: true
+          body_path: release-notes.md
