@@ -41,6 +41,19 @@ public enum StartupPage
 
 public sealed record StartupPageOption(StartupPage Page, string Label);
 
+/// <summary>How often the Shell should silently re-run the current page's RefreshCommand - for
+/// anyone who leaves the app open on a second monitor and wants it to stay current on its own.
+/// Off (the default) matches the app's previous, always-manual-refresh behavior exactly.</summary>
+public enum AutoRefreshInterval
+{
+    Off,
+    OneMinute,
+    FiveMinutes,
+    FifteenMinutes
+}
+
+public sealed record AutoRefreshOption(AutoRefreshInterval Interval, string Label);
+
 public sealed class AppSettings
 {
     public ViewMode ViewMode { get; set; } = ViewMode.Intermediate;
@@ -49,6 +62,7 @@ public sealed class AppSettings
     public string LastTicker { get; set; } = "AAPL";
     public StartupPage StartupPage { get; set; } = StartupPage.LastViewed;
     public string LastViewedNavTag { get; set; } = "Terminal";
+    public AutoRefreshInterval AutoRefreshInterval { get; set; } = AutoRefreshInterval.Off;
 }
 
 /// <summary>Native replacement for ProModeContext/ThemeContext + localStorage: persists view mode,
@@ -87,6 +101,25 @@ public sealed partial class SettingsService : ObservableObject
         new(StartupPage.TrackRecord, "Track Record")
     };
 
+    public static readonly IReadOnlyList<AutoRefreshOption> AutoRefreshOptions = new List<AutoRefreshOption>
+    {
+        new(AutoRefreshInterval.Off, "Off"),
+        new(AutoRefreshInterval.OneMinute, "1 min"),
+        new(AutoRefreshInterval.FiveMinutes, "5 min"),
+        new(AutoRefreshInterval.FifteenMinutes, "15 min")
+    };
+
+    /// <summary>Pure mapping, pulled out for direct unit testing - Timeout.InfiniteTimeSpan for Off
+    /// since callers (ShellViewModel) stop/never start a timer for that case anyway, but a total
+    /// mapping is simpler to reason about than one with a "shouldn't be called" gap.</summary>
+    public static TimeSpan ToTimeSpan(AutoRefreshInterval interval) => interval switch
+    {
+        AutoRefreshInterval.OneMinute => TimeSpan.FromMinutes(1),
+        AutoRefreshInterval.FiveMinutes => TimeSpan.FromMinutes(5),
+        AutoRefreshInterval.FifteenMinutes => TimeSpan.FromMinutes(15),
+        _ => Timeout.InfiniteTimeSpan
+    };
+
     private readonly string _path;
 
     [ObservableProperty]
@@ -110,6 +143,9 @@ public sealed partial class SettingsService : ObservableObject
     /// LastViewed later doesn't require first revisiting a page for it to have a value.</summary>
     public string LastViewedNavTag { get; set; }
 
+    [ObservableProperty]
+    private AutoRefreshInterval _autoRefreshInterval;
+
     public SettingsService()
         : this(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "QuantHub"))
     {
@@ -130,9 +166,12 @@ public sealed partial class SettingsService : ObservableObject
         LastTicker = loaded.LastTicker;
         StartupPage = loaded.StartupPage;
         LastViewedNavTag = loaded.LastViewedNavTag;
+        _autoRefreshInterval = loaded.AutoRefreshInterval;
     }
 
     partial void OnViewModeChanged(ViewMode value) => Save();
+
+    partial void OnAutoRefreshIntervalChanged(AutoRefreshInterval value) => Save();
 
     partial void OnThemeChanged(AppTheme value)
     {
@@ -194,7 +233,8 @@ public sealed partial class SettingsService : ObservableObject
                 AccentName = AccentName,
                 LastTicker = LastTicker,
                 StartupPage = StartupPage,
-                LastViewedNavTag = LastViewedNavTag
+                LastViewedNavTag = LastViewedNavTag,
+                AutoRefreshInterval = AutoRefreshInterval
             };
             var json = JsonSerializer.Serialize(current, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_path, json);

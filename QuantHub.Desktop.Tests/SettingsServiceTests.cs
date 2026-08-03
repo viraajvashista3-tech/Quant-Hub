@@ -24,6 +24,30 @@ public class SettingsServiceTests : IDisposable
         Assert.Equal("AAPL", service.LastTicker);
         Assert.Equal(StartupPage.LastViewed, service.StartupPage);
         Assert.Equal("Terminal", service.LastViewedNavTag);
+        Assert.Equal(AutoRefreshInterval.Off, service.AutoRefreshInterval);
+    }
+
+    [Theory]
+    [InlineData(AutoRefreshInterval.Off, -1)] // Timeout.InfiniteTimeSpan.Ticks == -1
+    [InlineData(AutoRefreshInterval.OneMinute, 60)]
+    [InlineData(AutoRefreshInterval.FiveMinutes, 300)]
+    [InlineData(AutoRefreshInterval.FifteenMinutes, 900)]
+    public void ToTimeSpan_MapsEachIntervalCorrectly(AutoRefreshInterval interval, int expectedSeconds)
+    {
+        var expected = expectedSeconds < 0 ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds(expectedSeconds);
+
+        Assert.Equal(expected, SettingsService.ToTimeSpan(interval));
+    }
+
+    [Fact]
+    public void AutoRefreshInterval_PersistsAcrossInstances()
+    {
+        var service = NewService();
+        service.AutoRefreshInterval = AutoRefreshInterval.FiveMinutes;
+
+        var reloaded = NewService();
+
+        Assert.Equal(AutoRefreshInterval.FiveMinutes, reloaded.AutoRefreshInterval);
     }
 
     [Fact]

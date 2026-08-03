@@ -150,6 +150,43 @@
 
     <Border Classes="card">
       <StackPanel>
+        <TextBlock Text="AUTO-REFRESH" Classes="cardTitle"/>
+        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,10"
+                   Text="Silently re-fetch whatever page is open on this interval - handy if you leave the app on a second monitor."/>
+        <ItemsControl ItemsSource="{Binding AutoRefreshOptions}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal"/>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Button Content="{Binding Label}" Padding="16,8" Margin="0,0,8,0"
+                      FontSize="13" FontWeight="SemiBold" BorderThickness="0"
+                      Cursor="Hand"
+                      Command="{Binding DataContext.SelectAutoRefreshCommand, ElementName=Root}"
+                      CommandParameter="{Binding}">
+                <Button.Background>
+                  <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="PrimaryBrush|SurfaceBrush">
+                    <Binding Path="Interval"/>
+                    <Binding Path="DataContext.AutoRefreshInterval" ElementName="Root"/>
+                  </MultiBinding>
+                </Button.Background>
+                <Button.Foreground>
+                  <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="White|TextBrush">
+                    <Binding Path="Interval"/>
+                    <Binding Path="DataContext.AutoRefreshInterval" ElementName="Root"/>
+                  </MultiBinding>
+                </Button.Foreground>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
+      <StackPanel>
         <TextBlock Text="WATCHLIST BACKUP" Classes="cardTitle"/>
         <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,10"
                    Text="Your watchlist lives only on this machine - export it to a file you can keep somewhere safe, or bring it back with Import (merges into whatever's already here, never replaces it)."/>

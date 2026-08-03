@@ -34,6 +34,7 @@ public sealed partial class ShellViewModel : ObservableObject
     private readonly TrackRecordViewModel _trackRecord;
     private readonly PredictionLogService _predictionLog;
     private readonly DispatcherTimer _tickerDebounce = new() { Interval = TimeSpan.FromMilliseconds(350) };
+    private readonly DispatcherTimer _autoRefreshTimer = new();
 
     public IReadOnlyList<NavItem> NavItems { get; } =
     [
@@ -126,9 +127,15 @@ public sealed partial class ShellViewModel : ObservableObject
         _appState.PropertyChanged += OnAppStateChanged;
         _settings.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName != nameof(SettingsService.ViewMode)) return;
-            OnPropertyChanged(nameof(ViewMode));
+            if (e.PropertyName == nameof(SettingsService.ViewMode)) OnPropertyChanged(nameof(ViewMode));
+            if (e.PropertyName == nameof(SettingsService.AutoRefreshInterval)) ApplyAutoRefreshInterval(_settings.AutoRefreshInterval);
         };
+
+        // Silently re-runs whatever page is currently open's own RefreshCommand on the configured
+        // interval - for anyone who leaves the app on a second monitor. Off by default; reconfigured
+        // above whenever the Settings page changes AutoRefreshInterval, not just once at startup.
+        _autoRefreshTimer.Tick += (_, _) => Refresh();
+        ApplyAutoRefreshInterval(_settings.AutoRefreshInterval);
 
         // Commit to AppState.ActiveTicker only after the user pauses typing - without this, typing
         // "SHEL" fires five separate loads (S/SH/SHE/SHEL), and since they're unordered fire-and-forget
@@ -250,5 +257,13 @@ public sealed partial class ShellViewModel : ObservableObject
         {
             page.RefreshCommand.Execute(null);
         }
+    }
+
+    private void ApplyAutoRefreshInterval(AutoRefreshInterval interval)
+    {
+        _autoRefreshTimer.Stop();
+        if (interval == AutoRefreshInterval.Off) return;
+        _autoRefreshTimer.Interval = SettingsService.ToTimeSpan(interval);
+        _autoRefreshTimer.Start();
     }
 }

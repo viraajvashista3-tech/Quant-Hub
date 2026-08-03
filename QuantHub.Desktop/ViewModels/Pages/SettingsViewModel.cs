@@ -31,6 +31,8 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public IReadOnlyList<StartupPageOption> StartupPageOptions => SettingsService.StartupPageOptions;
 
+    public IReadOnlyList<AutoRefreshOption> AutoRefreshOptions => SettingsService.AutoRefreshOptions;
+
     /// <summary>Reads Directory.Build.props' &lt;Version&gt; at runtime (via the assembly's own
     /// metadata) rather than hardcoding a string here, so a version bump only ever has to happen
     /// in one place.</summary>
@@ -61,6 +63,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     {
         if (e.PropertyName == nameof(SettingsService.ViewMode)) OnPropertyChanged(nameof(ViewMode));
         if (e.PropertyName == nameof(SettingsService.Theme)) OnPropertyChanged(nameof(Theme));
+        if (e.PropertyName == nameof(SettingsService.AutoRefreshInterval)) OnPropertyChanged(nameof(AutoRefreshInterval));
     }
 
     private void OnUpdateCheckChanged(object? sender, EventArgs e)
@@ -91,11 +94,20 @@ public sealed partial class SettingsViewModel : ObservableObject
         set => _settings.Theme = value;
     }
 
+    public AutoRefreshInterval AutoRefreshInterval
+    {
+        get => _settings.AutoRefreshInterval;
+        set => _settings.AutoRefreshInterval = value;
+    }
+
     [RelayCommand]
     private void SelectViewMode(ViewModeOption option) => ViewMode = option.Mode;
 
     [RelayCommand]
     private void SelectTheme(ThemeOption option) => Theme = option.Theme;
+
+    [RelayCommand]
+    private void SelectAutoRefresh(AutoRefreshOption option) => AutoRefreshInterval = option.Interval;
 
     [RelayCommand]
     private void SelectAccent(AccentColor accent)
