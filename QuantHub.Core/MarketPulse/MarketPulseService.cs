@@ -109,16 +109,19 @@ public sealed class MarketPulseService(YahooFinanceClient yahoo)
         _ => "Extreme Greed"
     };
 
-    /// <summary>Sector rotation note from stock_data.py lines 756-763. Deliberately preserves the
-    /// literal "+" sign hardcoded before the best performer's value - if the "best" (least-bad or
-    /// most-positive) 1-week performer is itself negative, this renders as e.g. "+-0.3%".</summary>
+    /// <summary>Sector rotation note, adapted from stock_data.py lines 756-763. The Python original
+    /// (and this port, until now) hardcoded a "+" before the best performer's value regardless of
+    /// sign - harmless when sectors are mixed, but renders as nonsense like "+-0.3%" on a red week
+    /// where every sector is down and the "best" performer is just the least-bad one. Now only shown
+    /// when the value is actually non-negative.</summary>
     internal static string ComputeRotationNote(IReadOnlyList<MarketPulseItem> sectors)
     {
         if (sectors.Count == 0) return "";
         var sortedByWeek = sectors.OrderByDescending(s => s.Change1wPct).ToList();
         var best = sortedByWeek[0];
         var worst = sortedByWeek[^1];
-        return $"Money is rotating into {best.Label} (+{best.Change1wPct.ToString("0.0")}% 1W) and out of " +
+        var bestSign = best.Change1wPct >= 0 ? "+" : "";
+        return $"Money is rotating into {best.Label} ({bestSign}{best.Change1wPct.ToString("0.0")}% 1W) and out of " +
                $"{worst.Label} ({worst.Change1wPct.ToString("0.0")}% 1W).";
     }
 }

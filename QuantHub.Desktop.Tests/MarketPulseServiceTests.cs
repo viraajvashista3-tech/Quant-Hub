@@ -33,10 +33,11 @@ public class MarketPulseServiceTests
     };
 
     [Fact]
-    public void ComputeRotationNote_BestPerformerAlwaysGetsLiteralPlusSign_EvenWhenNegative()
+    public void ComputeRotationNote_AllSectorsNegative_BestPerformerHasNoPlusSign()
     {
-        // All sectors down on the week - the "best" (least bad) performer is still negative,
-        // but the original hardcodes a "+" before it regardless, producing "+-0.3%".
+        // All sectors down on the week - the "best" (least bad) performer is still negative, so it
+        // must not get a "+" prefix (the original Python port hardcoded one unconditionally here,
+        // producing nonsense like "+-0.3%").
         var sectors = new List<MarketPulseItem>
         {
             Item("XLK", "Technology", -0.3),
@@ -45,7 +46,7 @@ public class MarketPulseServiceTests
 
         var note = MarketPulseService.ComputeRotationNote(sectors);
 
-        Assert.Equal("Money is rotating into Technology (+-0.3% 1W) and out of Energy (-2.1% 1W).", note);
+        Assert.Equal("Money is rotating into Technology (-0.3% 1W) and out of Energy (-2.1% 1W).", note);
     }
 
     [Fact]
