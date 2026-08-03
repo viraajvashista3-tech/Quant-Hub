@@ -1,0 +1,16 @@
+<Project>
+
+  <!-- Shared assembly metadata for every project in the solution (Core / Desktop / Tests) so
+       version bumps and repo-link changes happen in exactly one place. -->
+  <PropertyGroup>
+    <Version>1.0.0</Version>
+    <Authors>Viraaj Vashista</Authors>
+    <Company>Viraaj Vashista</Company>
+    <Product>Quant Terminal</Product>
+    <Copyright>Copyright (c) $([System.DateTime]::Now.Year) Viraaj Vashista</Copyright>
+    <RepositoryUrl>https://github.com/viraajvashista3-tech/Quant-Hub</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/viraajvashista3-tech/Quant-Hub</PackageProjectUrl>
+    <NeutralLanguage>en</NeutralLanguage>
+  </PropertyGroup>
+
+</Project>

@@ -124,5 +124,17 @@
                    Foreground="{DynamicResource MutedTextBrush}" IsVisible="False"/>
       </StackPanel>
     </Border>
+
+    <Border Classes="card">
+      <StackPanel>
+        <TextBlock Text="ABOUT" Classes="cardTitle"/>
+        <TextBlock Text="{Binding VersionText}" FontSize="14" FontWeight="Bold"
+                   Foreground="{DynamicResource TextBrush}"/>
+        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,4,0,10"
+                   Text="A transparent, honestly-backtested stock research terminal. For research only - not investment advice."/>
+        <Button Content="⭐ View on GitHub" HorizontalAlignment="Left" Cursor="Hand"
+                Command="{Binding OpenRepositoryCommand}"/>
+      </StackPanel>
+    </Border>
   </StackPanel>
 </UserControl>

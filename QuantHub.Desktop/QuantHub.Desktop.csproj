@@ -8,7 +8,14 @@
     <ApplicationIcon>AppIcon.ico</ApplicationIcon>
     <AssemblyName>QuantTerminal</AssemblyName>
     <Product>Quant Terminal</Product>
+    <Description>A transparent, honestly-backtested stock research terminal for Windows.</Description>
     <RootNamespace>QuantHub.Desktop</RootNamespace>
+
+    <!-- AVLN3001: ShellWindow is constructed exclusively through DI (see App.axaml.cs), so it
+         intentionally has no public parameterless constructor. That means Avalonia's design-time/
+         avares:// XAML loader can't reach it - irrelevant here since nothing ever loads it that way
+         at runtime, so the warning is expected noise, not a bug. -->
+    <NoWarn>$(NoWarn);AVLN3001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

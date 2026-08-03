@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Reflection;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -25,6 +27,14 @@ public sealed partial class SettingsViewModel : ObservableObject
     ];
 
     public IReadOnlyList<AccentColor> AccentColors => SettingsService.AccentColors;
+
+    /// <summary>Reads Directory.Build.props' &lt;Version&gt; at runtime (via the assembly's own
+    /// metadata) rather than hardcoding a string here, so a version bump only ever has to happen
+    /// in one place.</summary>
+    public static string VersionText =>
+        $"Quant Terminal v{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0"}";
+
+    public const string RepositoryUrl = "https://github.com/viraajvashista3-tech/Quant-Hub";
 
     public SettingsViewModel(SettingsService settings, WatchlistService watchlist)
     {
@@ -70,6 +80,10 @@ public sealed partial class SettingsViewModel : ObservableObject
         _settings.Save();
         OnPropertyChanged(nameof(AccentName));
     }
+
+    [RelayCommand]
+    private static void OpenRepository() =>
+        Process.Start(new ProcessStartInfo(RepositoryUrl) { UseShellExecute = true });
 
     // ---------- Watchlist backup ----------
     // Deliberately scoped to just the watchlist, not every local JSON file under

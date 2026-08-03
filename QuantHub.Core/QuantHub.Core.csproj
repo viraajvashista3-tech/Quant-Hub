@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Description>Quant Terminal's data/analysis engine - Yahoo Finance client, technical indicators, quant scoring, and walk-forward backtesting.</Description>
   </PropertyGroup>
 
   <ItemGroup>
