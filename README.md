@@ -13,6 +13,15 @@
 
 ---
 
+<p align="center">
+  <img src="docs/screenshots/terminal.png" width="49%" alt="Terminal page - Buy/Hold/Avoid quant score for a ticker" />
+  <img src="docs/screenshots/track-record.png" width="49%" alt="Track Record page - the app's honesty scorecard" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/universe.png" width="49%" alt="Universe page - peer cards and watchlist" />
+  <img src="docs/screenshots/peers.png" width="49%" alt="Peers page - valuation and quality charts" />
+</p>
+
 Quant Terminal is a native desktop app that pulls live market data and turns it into a
 plain-English **Buy / Hold / Avoid** read on any stock — then shows you exactly how well
 that read has actually done, instead of just asking you to trust it.
