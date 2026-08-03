@@ -22,6 +22,14 @@
     <ProjectReference Include="..\QuantHub.Core\QuantHub.Core.csproj" />
   </ItemGroup>
 
+  <!-- ApplicationIcon (above) only embeds AppIcon.ico into the compiled .exe's own Win32 resources
+       (Explorer/shortcut icon) - it's a separate mechanism from Avalonia's avares:// resource
+       loader, so ShellWindow's runtime Icon= (title bar / taskbar / Alt+Tab) needs its own explicit
+       include to be reachable at all. -->
+  <ItemGroup>
+    <AvaloniaResource Include="AppIcon.ico" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.18" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.18" />

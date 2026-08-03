@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="QuantHub.Desktop.Views.ShellWindow"
         x:Name="Root"
-        Title="Quant Terminal" Height="900" Width="1440" MinHeight="600" MinWidth="1000"
+        Title="Quant Terminal" Icon="/AppIcon.ico" Height="900" Width="1440" MinHeight="600" MinWidth="1000"
         WindowStartupLocation="CenterScreen" WindowState="Maximized"
         Background="{DynamicResource BackgroundBrush}">
   <Window.Styles>
