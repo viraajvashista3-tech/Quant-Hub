@@ -2,7 +2,8 @@ using QuantHub.Core.Models;
 
 namespace QuantHub.Core.Universe;
 
-/// <summary>Verbatim 11-sector/128-ticker hardcoded universe from stock_data.py lines 16-28.</summary>
+/// <summary>11-sector, 138-ticker hardcoded universe, originally ported from stock_data.py lines
+/// 16-28 (128 tickers at the time; grown since).</summary>
 public static class UniverseData
 {
     public static readonly IReadOnlyList<(string Sector, string[] Tickers)> Sectors =
@@ -23,7 +24,7 @@ public static class UniverseData
     public static IReadOnlyList<UniverseSector> AsSectors() =>
         Sectors.Select(s => new UniverseSector { Sector = s.Sector, Tickers = s.Tickers }).ToList();
 
-    /// <summary>All 128 tickers across every sector, flattened - the full backtestable universe
+    /// <summary>All 138 tickers across every sector, flattened - the full backtestable universe
     /// (BacktestEngine/BacktestViewModel/AutoBacktestService all use this rather than a per-sector
     /// sample, so every sector's peer set is complete for RelativeStrengthSignal's cross-sectional
     /// comparisons).</summary>
