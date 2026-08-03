@@ -9,10 +9,24 @@
       <Setter Property="Padding" Value="16,12"/>
       <Setter Property="Margin" Value="0,0,0,8"/>
     </Style>
+    <Style Selector="Button.settingChoice">
+      <Setter Property="Padding" Value="14,7"/>
+      <Setter Property="Margin" Value="0,0,8,0"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="TextBlock.settingLabel">
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Margin" Value="0,0,0,10"/>
+    </Style>
   </UserControl.Styles>
 
   <StackPanel MaxWidth="640" HorizontalAlignment="Left">
 
+    <!-- ===== Appearance: theme + accent, grouped since both are purely visual ===== -->
     <Border Classes="card">
       <StackPanel>
         <TextBlock Text="APPEARANCE" Classes="cardTitle"/>
@@ -48,13 +62,8 @@
             </ItemsControl.ItemTemplate>
           </ItemsControl>
         </Border>
-      </StackPanel>
-    </Border>
 
-    <Border Classes="card">
-      <StackPanel>
-        <TextBlock Text="ACCENT COLOR" Classes="cardTitle"/>
-        <ItemsControl ItemsSource="{Binding AccentColors}">
+        <ItemsControl ItemsSource="{Binding AccentColors}" Margin="0,14,0,0">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
               <StackPanel Orientation="Horizontal"/>
@@ -62,12 +71,12 @@
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate>
-              <Button Padding="0" Margin="0,0,12,0" Width="40" Height="40" CornerRadius="20"
+              <Button Padding="0" Margin="0,0,12,0" Width="36" Height="36" CornerRadius="18"
                       Background="Transparent" BorderThickness="0" Cursor="Hand"
                       ToolTip.Tip="{Binding Label}"
                       Command="{Binding DataContext.SelectAccentCommand, ElementName=Root}"
                       CommandParameter="{Binding}">
-                <Border Width="32" Height="32" CornerRadius="16" BorderThickness="3"
+                <Border Width="30" Height="30" CornerRadius="15" BorderThickness="3"
                         Background="{Binding Hsl, Converter={StaticResource HslToBrush}}">
                   <Border.BorderBrush>
                     <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="TextBrush|Transparent">
@@ -83,6 +92,8 @@
       </StackPanel>
     </Border>
 
+    <!-- ===== Difficulty mode - kept as its own card; unlike the settings below, each option's
+         description is genuinely necessary reading, not filler. ===== -->
     <Border Classes="card">
       <StackPanel>
         <TextBlock Text="DIFFICULTY MODE" Classes="cardTitle"/>
@@ -111,93 +122,86 @@
       </StackPanel>
     </Border>
 
+    <!-- ===== Behavior - Startup Page / Auto-Refresh / Always on Top, grouped into compact rows
+         instead of three separate cards. Explanations moved to tooltips (hover the label) rather
+         than always-visible paragraphs - the labels plus a hover for anyone curious is enough. ===== -->
     <Border Classes="card">
       <StackPanel>
-        <TextBlock Text="STARTUP PAGE" Classes="cardTitle"/>
-        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,10"
-                   Text="Which page opens when the app launches."/>
-        <ItemsControl ItemsSource="{Binding StartupPageOptions}">
-          <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-              <WrapPanel/>
-            </ItemsPanelTemplate>
-          </ItemsControl.ItemsPanel>
-          <ItemsControl.ItemTemplate>
-            <DataTemplate>
-              <Button Content="{Binding Label}" Padding="16,8" Margin="0,0,8,8"
-                      FontSize="13" FontWeight="SemiBold" BorderThickness="0"
-                      Cursor="Hand"
-                      Command="{Binding DataContext.SelectStartupPageCommand, ElementName=Root}"
-                      CommandParameter="{Binding}">
-                <Button.Background>
-                  <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="PrimaryBrush|SurfaceBrush">
-                    <Binding Path="Page"/>
-                    <Binding Path="DataContext.StartupPage" ElementName="Root"/>
-                  </MultiBinding>
-                </Button.Background>
-                <Button.Foreground>
-                  <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="White|TextBrush">
-                    <Binding Path="Page"/>
-                    <Binding Path="DataContext.StartupPage" ElementName="Root"/>
-                  </MultiBinding>
-                </Button.Foreground>
-              </Button>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </StackPanel>
-    </Border>
+        <TextBlock Text="BEHAVIOR" Classes="cardTitle"/>
 
-    <Border Classes="card">
-      <StackPanel>
-        <TextBlock Text="AUTO-REFRESH" Classes="cardTitle"/>
-        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,10"
-                   Text="Silently re-fetch whatever page is open on this interval - handy if you leave the app on a second monitor."/>
-        <ItemsControl ItemsSource="{Binding AutoRefreshOptions}">
-          <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-              <StackPanel Orientation="Horizontal"/>
-            </ItemsPanelTemplate>
-          </ItemsControl.ItemsPanel>
-          <ItemsControl.ItemTemplate>
-            <DataTemplate>
-              <Button Content="{Binding Label}" Padding="16,8" Margin="0,0,8,0"
-                      FontSize="13" FontWeight="SemiBold" BorderThickness="0"
-                      Cursor="Hand"
-                      Command="{Binding DataContext.SelectAutoRefreshCommand, ElementName=Root}"
-                      CommandParameter="{Binding}">
-                <Button.Background>
-                  <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="PrimaryBrush|SurfaceBrush">
-                    <Binding Path="Interval"/>
-                    <Binding Path="DataContext.AutoRefreshInterval" ElementName="Root"/>
-                  </MultiBinding>
-                </Button.Background>
-                <Button.Foreground>
-                  <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="White|TextBrush">
-                    <Binding Path="Interval"/>
-                    <Binding Path="DataContext.AutoRefreshInterval" ElementName="Root"/>
-                  </MultiBinding>
-                </Button.Foreground>
-              </Button>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </StackPanel>
-    </Border>
+        <Grid ColumnDefinitions="110,*" Margin="0,0,0,14">
+          <TextBlock Grid.Column="0" Classes="settingLabel" Text="Start on"
+                     ToolTip.Tip="Which page opens when the app launches."/>
+          <ItemsControl Grid.Column="1" ItemsSource="{Binding StartupPageOptions}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel/>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Button Classes="settingChoice" Content="{Binding Label}"
+                        Command="{Binding DataContext.SelectStartupPageCommand, ElementName=Root}"
+                        CommandParameter="{Binding}">
+                  <Button.Background>
+                    <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="PrimaryBrush|SurfaceBrush">
+                      <Binding Path="Page"/>
+                      <Binding Path="DataContext.StartupPage" ElementName="Root"/>
+                    </MultiBinding>
+                  </Button.Background>
+                  <Button.Foreground>
+                    <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="White|TextBrush">
+                      <Binding Path="Page"/>
+                      <Binding Path="DataContext.StartupPage" ElementName="Root"/>
+                    </MultiBinding>
+                  </Button.Foreground>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Grid>
 
-    <Border Classes="card">
-      <StackPanel>
-        <TextBlock Text="WINDOW" Classes="cardTitle"/>
+        <Grid ColumnDefinitions="110,*" Margin="0,0,0,14">
+          <TextBlock Grid.Column="0" Classes="settingLabel" Text="Auto-refresh"
+                     ToolTip.Tip="Silently re-fetch whatever page is open on this interval - handy on a second monitor."/>
+          <ItemsControl Grid.Column="1" ItemsSource="{Binding AutoRefreshOptions}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel/>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Button Classes="settingChoice" Content="{Binding Label}"
+                        Command="{Binding DataContext.SelectAutoRefreshCommand, ElementName=Root}"
+                        CommandParameter="{Binding}">
+                  <Button.Background>
+                    <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="PrimaryBrush|SurfaceBrush">
+                      <Binding Path="Interval"/>
+                      <Binding Path="DataContext.AutoRefreshInterval" ElementName="Root"/>
+                    </MultiBinding>
+                  </Button.Background>
+                  <Button.Foreground>
+                    <MultiBinding Converter="{StaticResource EqualsToBrush}" ConverterParameter="White|TextBrush">
+                      <Binding Path="Interval"/>
+                      <Binding Path="DataContext.AutoRefreshInterval" ElementName="Root"/>
+                    </MultiBinding>
+                  </Button.Foreground>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Grid>
+
         <CheckBox Content="Always on top" IsChecked="{Binding AlwaysOnTop}"
                   ToolTip.Tip="Keep this window above other apps - handy for a second monitor you check at a glance."/>
       </StackPanel>
     </Border>
 
+    <!-- ===== Data - watchlist backup, kept minimal ===== -->
     <Border Classes="card">
       <StackPanel>
-        <TextBlock Text="WATCHLIST BACKUP" Classes="cardTitle"/>
-        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,10"
-                   Text="Your watchlist lives only on this machine - export it to a file you can keep somewhere safe, or bring it back with Import (merges into whatever's already here, never replaces it)."/>
+        <TextBlock Text="WATCHLIST BACKUP" Classes="cardTitle" ToolTip.Tip="Your watchlist lives only on this machine. Import merges into whatever's already here - it never replaces it."/>
         <StackPanel Orientation="Horizontal">
           <Button x:Name="ExportWatchlistButton" Content="⬇ Export Watchlist" Margin="0,0,8,0"/>
           <Button x:Name="ImportWatchlistButton" Content="⬆ Import Watchlist"/>
@@ -207,6 +211,7 @@
       </StackPanel>
     </Border>
 
+    <!-- ===== About ===== -->
     <Border Classes="card">
       <StackPanel>
         <TextBlock Text="ABOUT" Classes="cardTitle"/>

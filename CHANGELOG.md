@@ -19,6 +19,17 @@ All notable changes to this project are documented here. Format loosely follows
   honest, benchmark-relative methodology (excess return vs. the S&P 500 since your entry date) as
   the rest of the app.
 
+### Fixed
+- Terminal's "Compare to another ticker" box only ever worked if you clicked a suggestion from
+  the dropdown - typing a ticker and pressing Enter (or just typing and moving on) silently did
+  nothing, unlike the main ticker search which has always worked either way.
+
+### Changed
+- Settings page consolidated from 8 stacked cards down to 5 - Theme and Accent Color merged into
+  one Appearance card; Startup Page, Auto-Refresh, and Always on Top merged into one Behavior
+  card with compact label+control rows. Several always-visible explanatory paragraphs became
+  tooltips instead, cutting down on scrolling and visual repetition.
+
 ## [1.0.0] — 2026-08-03
 
 First release of the native Windows desktop version.

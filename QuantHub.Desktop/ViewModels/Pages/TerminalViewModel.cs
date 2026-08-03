@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiveChartsCore;
@@ -174,6 +175,12 @@ public sealed partial class TerminalViewModel : ObservableObject, IRefreshablePa
         // picks up today's point without needing a full page reload.
         _predictionLog.Updated += (_, _) => BuildScoreHistory();
 
+        _compareDebounce.Tick += (_, _) =>
+        {
+            _compareDebounce.Stop();
+            if (!string.IsNullOrWhiteSpace(CompareTickerInput)) _ = SetCompareTickerAsync(CompareTickerInput);
+        };
+
         _ = LoadAsync();
     }
 
@@ -204,14 +211,29 @@ public sealed partial class TerminalViewModel : ObservableObject, IRefreshablePa
     private StockHistory? _lastCompareHistory;
     private AnalystData? _analystData;
 
+    // Previously the ONLY way to set a compare ticker was clicking a suggestion from the
+    // AutoCompleteBox dropdown (SelectionChanged, wired in TerminalView.axaml.cs) - typing a ticker
+    // and pressing Enter, or just typing and moving on, silently did nothing. The sidebar's main
+    // ticker search has always worked either way via this same debounce-then-commit pattern
+    // (ShellViewModel._tickerDebounce); the Compare box never got the equivalent, which is what made
+    // it feel broken/inconsistent with the rest of the app.
+    private readonly DispatcherTimer _compareDebounce = new() { Interval = TimeSpan.FromMilliseconds(500) };
+
     /// <summary>Backs the "Compare to" AutoCompleteBox's AsyncPopulator (wired in TerminalView.axaml.cs
     /// code-behind, same reasoning as ShellViewModel.SearchTickersAsync).</summary>
     public Task<IReadOnlyList<TickerSearchResult>> SearchTickersAsync(string query, CancellationToken ct) =>
         _stockAnalysis.SearchTickersAsync(query, ct);
 
+    partial void OnCompareTickerInputChanged(string value)
+    {
+        _compareDebounce.Stop();
+        if (!string.IsNullOrWhiteSpace(value)) _compareDebounce.Start();
+    }
+
     [RelayCommand]
     private async Task SetCompareTickerAsync(string symbol)
     {
+        _compareDebounce.Stop();
         var upper = symbol.Trim().ToUpperInvariant();
         if (string.IsNullOrEmpty(upper) || upper == Overview?.Ticker) return; // comparing a ticker to itself is meaningless
 

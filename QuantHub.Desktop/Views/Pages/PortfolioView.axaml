@@ -8,13 +8,14 @@
 
     <controls:ErrorCard Message="{Binding ErrorMessage}"/>
 
-    <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,16"
-               Text="Track what you actually paid, not a Quant Score prediction - your own positions, measured against the S&#160;&amp;&#160;P 500 the same honest way the Track Record page measures the app's own calls."/>
+    <TextBlock FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,16"
+               Text="Your own positions, not a Quant Score prediction - measured against the S&#160;&amp;&#160;P 500."
+               ToolTip.Tip="The same honest, benchmark-relative methodology the Track Record page uses for the app's own calls."/>
 
     <Border Classes="card">
       <StackPanel>
         <TextBlock Text="ADD POSITION" Classes="cardTitle"/>
-        <Grid ColumnDefinitions="90,90,110,140,Auto" Margin="0,0,0,4">
+        <Grid ColumnDefinitions="90,80,115,Auto,Auto" Margin="0,0,0,4">
           <TextBox Grid.Column="0" Text="{Binding NewTicker}" Watermark="Ticker" Margin="0,0,8,0"/>
           <TextBox Grid.Column="1" Text="{Binding NewShares}" Watermark="Shares" Margin="0,0,8,0"/>
           <TextBox Grid.Column="2" Text="{Binding NewEntryPrice}" Watermark="Entry price" Margin="0,0,8,0"/>
