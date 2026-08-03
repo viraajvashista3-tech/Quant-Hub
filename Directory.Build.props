@@ -10,6 +10,7 @@
     <Copyright>Copyright (c) $([System.DateTime]::Now.Year) Viraaj Vashista</Copyright>
     <RepositoryUrl>https://github.com/viraajvashista3-tech/Quant-Hub</RepositoryUrl>
     <PackageProjectUrl>https://github.com/viraajvashista3-tech/Quant-Hub</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
 
