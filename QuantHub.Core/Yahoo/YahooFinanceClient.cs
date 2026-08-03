@@ -79,20 +79,41 @@ public sealed class YahooFinanceClient(HttpClient http)
         }
     }
 
+    // Yahoo rate-limits aggressively under the bursty parallel load this app generates (e.g.
+    // UniverseRankingService sweeping 138 tickers at once) - without a retry, a single 429 during
+    // that sweep permanently drops that ticker from the results for the rest of the cache TTL, even
+    // though the very next attempt would likely have succeeded. Short, bounded backoff only (not
+    // full Polly) since this only ever needs to smooth over Yahoo's transient throttling, not
+    // arbitrary outages.
+    private static readonly TimeSpan[] RetryDelays = [TimeSpan.FromMilliseconds(400), TimeSpan.FromMilliseconds(1200)];
+
     private async Task<HttpResponseMessage> GetWithCrumbAsync(string urlWithoutCrumb, CancellationToken ct)
     {
         await EnsureCrumbAsync(ct);
         var url = _crumb is { Length: > 0 } c ? $"{urlWithoutCrumb}&crumb={Uri.EscapeDataString(c)}" : urlWithoutCrumb;
-        var resp = await http.GetAsync(url, ct);
+        var resp = await SendWithRetryAsync(url, ct);
         if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
             _crumb = null;
             await EnsureCrumbAsync(ct);
             url = _crumb is { Length: > 0 } c2 ? $"{urlWithoutCrumb}&crumb={Uri.EscapeDataString(c2)}" : urlWithoutCrumb;
             resp.Dispose();
-            resp = await http.GetAsync(url, ct);
+            resp = await SendWithRetryAsync(url, ct);
         }
         return resp;
+    }
+
+    private async Task<HttpResponseMessage> SendWithRetryAsync(string url, CancellationToken ct)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            var resp = await http.GetAsync(url, ct);
+            var isRetryable = resp.StatusCode is HttpStatusCode.TooManyRequests or HttpStatusCode.ServiceUnavailable;
+            if (!isRetryable || attempt >= RetryDelays.Length) return resp;
+
+            resp.Dispose();
+            await Task.Delay(RetryDelays[attempt], ct);
+        }
     }
 
     /// <summary>range: "ytd" | "6mo" | "1y" | "2y" | "5y" | "1mo" (matching Yahoo's chart range values).</summary>
