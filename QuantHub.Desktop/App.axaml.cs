@@ -45,6 +45,7 @@ public partial class App : Application
                     services.AddSingleton<AutoBacktestService>();
                     services.AddSingleton<PredictionLogService>();
                     services.AddSingleton<WatchlistService>();
+                    services.AddSingleton<PortfolioService>();
                     services.AddSingleton<UniverseRankingService>();
                     services.AddSingleton<SessionBriefingService>();
                     services.AddSingleton(_ => new UpdateCheckService(new HttpClient { Timeout = TimeSpan.FromSeconds(10) }));
@@ -55,6 +56,7 @@ public partial class App : Application
                     services.AddSingleton<FundamentalsViewModel>();
                     services.AddSingleton<AnalystViewModel>();
                     services.AddSingleton<PeersViewModel>();
+                    services.AddSingleton<PortfolioViewModel>();
                     services.AddSingleton<InsiderViewModel>();
                     services.AddSingleton<MarketPulseViewModel>();
                     services.AddSingleton<SettingsViewModel>();

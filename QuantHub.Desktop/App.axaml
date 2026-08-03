@@ -68,6 +68,9 @@
     <DataTemplate DataType="{x:Type vmp:PeersViewModel}">
       <viewsp:PeersView/>
     </DataTemplate>
+    <DataTemplate DataType="{x:Type vmp:PortfolioViewModel}">
+      <viewsp:PortfolioView/>
+    </DataTemplate>
     <DataTemplate DataType="{x:Type vmp:TerminalViewModel}">
       <viewsp:TerminalView/>
     </DataTemplate>

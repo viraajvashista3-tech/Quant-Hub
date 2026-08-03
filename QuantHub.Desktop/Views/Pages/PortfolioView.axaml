@@ -1,0 +1,103 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:QuantHub.Desktop.Views.Controls"
+             x:Class="QuantHub.Desktop.Views.Pages.PortfolioView"
+             x:Name="Root">
+  <Panel>
+  <StackPanel MaxWidth="960" HorizontalAlignment="Left">
+
+    <controls:ErrorCard Message="{Binding ErrorMessage}"/>
+
+    <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,16"
+               Text="Track what you actually paid, not a Quant Score prediction - your own positions, measured against the S&#160;&amp;&#160;P 500 the same honest way the Track Record page measures the app's own calls."/>
+
+    <Border Classes="card">
+      <StackPanel>
+        <TextBlock Text="ADD POSITION" Classes="cardTitle"/>
+        <Grid ColumnDefinitions="90,90,110,140,Auto" Margin="0,0,0,4">
+          <TextBox Grid.Column="0" Text="{Binding NewTicker}" Watermark="Ticker" Margin="0,0,8,0"/>
+          <TextBox Grid.Column="1" Text="{Binding NewShares}" Watermark="Shares" Margin="0,0,8,0"/>
+          <TextBox Grid.Column="2" Text="{Binding NewEntryPrice}" Watermark="Entry price" Margin="0,0,8,0"/>
+          <DatePicker Grid.Column="3" SelectedDate="{Binding NewEntryDate}" Margin="0,0,8,0"/>
+          <Button Grid.Column="4" Content="+ Add" Classes="primary" Command="{Binding AddPositionCommand}"/>
+        </Grid>
+        <TextBlock Text="{Binding AddErrorMessage}" FontSize="12" Foreground="{DynamicResource DestructiveBrush}"
+                   TextWrapping="Wrap" Margin="0,6,0,0"
+                   IsVisible="{Binding AddErrorMessage, Converter={StaticResource NotEmptyToVis}}"/>
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" IsVisible="{Binding HasPositions}">
+      <StackPanel>
+        <TextBlock Text="SUMMARY" Classes="cardTitle"/>
+        <Grid ColumnDefinitions="*,*,*">
+          <StackPanel Grid.Column="0">
+            <TextBlock Text="MARKET VALUE" Classes="sectionLabel"/>
+            <TextBlock Text="{Binding Summary.TotalMarketValue, StringFormat={}{0:C2}}" FontSize="20" FontWeight="Bold"
+                       Foreground="{DynamicResource TextBrush}"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1">
+            <TextBlock Text="GAIN / LOSS" Classes="sectionLabel"/>
+            <TextBlock Text="{Binding Summary.TotalGainLossDollar, StringFormat={}{0:C2}}" FontSize="20" FontWeight="Bold"
+                       Foreground="{Binding Summary.TotalGainLossDollar, Converter={StaticResource SignToBrush}}"/>
+            <TextBlock Text="{Binding Summary.TotalGainLossPct, StringFormat={}{0:+0.0;-0.0}%}" FontSize="12"
+                       Foreground="{Binding Summary.TotalGainLossPct, Converter={StaticResource SignToBrush}}"/>
+          </StackPanel>
+          <StackPanel Grid.Column="2">
+            <TextBlock Text="VS S&amp;P 500 SINCE ENTRY" Classes="sectionLabel"/>
+            <TextBlock Text="{Binding Summary.WeightedExcessReturnVsBenchmarkPct, StringFormat={}{0:+0.0;-0.0}%}"
+                       FontSize="20" FontWeight="Bold"
+                       Foreground="{Binding Summary.WeightedExcessReturnVsBenchmarkPct, Converter={StaticResource SignToBrush}}"/>
+          </StackPanel>
+        </Grid>
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" IsVisible="{Binding HasPositions}">
+      <StackPanel>
+        <TextBlock Text="POSITIONS" Classes="cardTitle"/>
+        <Grid Margin="0,8,0,10" ColumnDefinitions="70,70,80,80,90,90,70,80,40">
+          <TextBlock Grid.Column="0" Text="TICKER" Classes="sectionLabel"/>
+          <TextBlock Grid.Column="1" Text="SHARES" Classes="sectionLabel"/>
+          <TextBlock Grid.Column="2" Text="ENTRY" Classes="sectionLabel"/>
+          <TextBlock Grid.Column="3" Text="CURRENT" Classes="sectionLabel"/>
+          <TextBlock Grid.Column="4" Text="VALUE" Classes="sectionLabel"/>
+          <TextBlock Grid.Column="5" Text="GAIN/LOSS" Classes="sectionLabel"/>
+          <TextBlock Grid.Column="6" Text="%" Classes="sectionLabel"/>
+          <TextBlock Grid.Column="7" Text="VS S&amp;P" Classes="sectionLabel"/>
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Positions}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Grid Margin="0,0,0,10" ColumnDefinitions="70,70,80,80,90,90,70,80,40">
+                <TextBlock Grid.Column="0" Text="{Binding Ticker}" FontWeight="Bold"
+                           FontFamily="{StaticResource MonoFontFamily}"/>
+                <TextBlock Grid.Column="1" Text="{Binding Shares, StringFormat={}{0:0.####}}"/>
+                <TextBlock Grid.Column="2" Text="{Binding EntryPrice, StringFormat={}{0:0.00}}"/>
+                <TextBlock Grid.Column="3" Text="{Binding CurrentPrice, StringFormat={}{0:0.00}}"/>
+                <TextBlock Grid.Column="4" Text="{Binding MarketValue, StringFormat={}{0:C0}}"/>
+                <TextBlock Grid.Column="5" Text="{Binding GainLossDollar, StringFormat={}{0:C0}}"
+                           Foreground="{Binding GainLossDollar, Converter={StaticResource SignToBrush}}"/>
+                <TextBlock Grid.Column="6" Text="{Binding GainLossPct, StringFormat={}{0:+0.0;-0.0}%}"
+                           Foreground="{Binding GainLossPct, Converter={StaticResource SignToBrush}}"/>
+                <TextBlock Grid.Column="7" Text="{Binding ExcessReturnVsBenchmarkPct, StringFormat={}{0:+0.0;-0.0}%}"
+                           Foreground="{Binding ExcessReturnVsBenchmarkPct, Converter={StaticResource SignToBrush}}"/>
+                <Button Grid.Column="8" Content="✕" Padding="6,2" FontSize="11" Background="Transparent" BorderThickness="0"
+                        Cursor="Hand" ToolTip.Tip="Remove this position"
+                        Command="{Binding DataContext.RemovePositionCommand, ElementName=Root}"
+                        CommandParameter="{Binding}"/>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+
+    <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource MutedTextBrush}" Margin="0,4,0,0"
+               Text="No positions yet - add one above with the ticker, share count, price you paid, and the date you bought it."
+               IsVisible="{Binding HasPositions, Converter={StaticResource InverseBoolToVis}}"/>
+
+  </StackPanel>
+  <controls:BusyOverlay IsBusy="{Binding IsBusy}"/>
+  </Panel>
+</UserControl>

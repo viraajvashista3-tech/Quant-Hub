@@ -14,6 +14,10 @@ All notable changes to this project are documented here. Format loosely follows
   app open on a second monitor.
 - F5 refreshes the current page from anywhere in the app.
 - An "Always on Top" window setting.
+- **Portfolio page** - track your own real positions (ticker, shares, entry price, entry date),
+  distinct from the Track Record page's grading of the Quant Score's own calls. Uses the same
+  honest, benchmark-relative methodology (excess return vs. the S&P 500 since your entry date) as
+  the rest of the app.
 
 ## [1.0.0] — 2026-08-03
 

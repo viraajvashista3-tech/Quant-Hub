@@ -32,6 +32,7 @@ public sealed partial class ShellViewModel : ObservableObject
     private readonly MarketPulseViewModel _marketPulse;
     private readonly SettingsViewModel _settingsPage;
     private readonly TrackRecordViewModel _trackRecord;
+    private readonly PortfolioViewModel _portfolio;
     private readonly PredictionLogService _predictionLog;
     private readonly DispatcherTimer _tickerDebounce = new() { Interval = TimeSpan.FromMilliseconds(350) };
     private readonly DispatcherTimer _autoRefreshTimer = new();
@@ -45,6 +46,7 @@ public sealed partial class ShellViewModel : ObservableObject
         new("Fundamentals", "Fundamentals", "📖"),
         new("Insider", "Insider", "👁"),
         new("MarketPulse", "Market Pulse", "🌐"),
+        new("Portfolio", "Portfolio", "💼"),
         new("TrackRecord", "Track Record", "🔍")
     ];
 
@@ -104,6 +106,7 @@ public sealed partial class ShellViewModel : ObservableObject
         MarketPulseViewModel marketPulse,
         SettingsViewModel settingsPage,
         TrackRecordViewModel trackRecord,
+        PortfolioViewModel portfolio,
         PredictionLogService predictionLog)
     {
         _appState = appState;
@@ -117,6 +120,7 @@ public sealed partial class ShellViewModel : ObservableObject
         _insider = insider;
         _marketPulse = marketPulse;
         _settingsPage = settingsPage;
+        _portfolio = portfolio;
         _trackRecord = trackRecord;
         _predictionLog = predictionLog;
         _predictionLog.Updated += (_, _) => OnPropertyChanged(nameof(TrackRecordText));
@@ -219,6 +223,7 @@ public sealed partial class ShellViewModel : ObservableObject
             "Peers" => _peers,
             "Insider" => _insider,
             "MarketPulse" => _marketPulse,
+            "Portfolio" => _portfolio,
             "TrackRecord" => _trackRecord,
             _ => throw new InvalidOperationException($"No page registered for nav tag \"{value.Tag}\".")
         };
