@@ -13,6 +13,7 @@ All notable changes to this project are documented here. Format loosely follows
 - A configurable auto-refresh interval (Off / 1 min / 5 min / 15 min) for anyone who leaves the
   app open on a second monitor.
 - F5 refreshes the current page from anywhere in the app.
+- An "Always on Top" window setting.
 
 ## [1.0.0] — 2026-08-03
 
