@@ -17,6 +17,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 {
     private readonly SettingsService _settings;
     private readonly WatchlistService _watchlist;
+    private readonly UpdateCheckService _updateCheck;
 
     public IReadOnlyList<ViewModeOption> ViewModeOptions => SettingsService.ViewModeOptions;
 
@@ -36,17 +37,35 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public const string RepositoryUrl = "https://github.com/viraajvashista3-tech/Quant-Hub";
 
-    public SettingsViewModel(SettingsService settings, WatchlistService watchlist)
+    /// <summary>Flattened onto plain properties (rather than binding through the nullable
+    /// UpdateCheckResult directly) so the view never has to null-guard a multi-level binding path -
+    /// same reasoning as AccentName/Theme being exposed as simple values above.</summary>
+    public bool UpdateAvailable => _updateCheck.Current?.IsUpdateAvailable ?? false;
+
+    public string UpdateVersionText => _updateCheck.Current is { } r ? $"Version {r.LatestVersion} is available" : "";
+
+    public string? UpdateReleaseUrl => _updateCheck.Current?.ReleaseUrl;
+
+    public SettingsViewModel(SettingsService settings, WatchlistService watchlist, UpdateCheckService updateCheck)
     {
         _settings = settings;
         _watchlist = watchlist;
+        _updateCheck = updateCheck;
         _settings.PropertyChanged += OnSettingsChanged;
+        _updateCheck.Updated += OnUpdateCheckChanged;
     }
 
     private void OnSettingsChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(SettingsService.ViewMode)) OnPropertyChanged(nameof(ViewMode));
         if (e.PropertyName == nameof(SettingsService.Theme)) OnPropertyChanged(nameof(Theme));
+    }
+
+    private void OnUpdateCheckChanged(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(UpdateAvailable));
+        OnPropertyChanged(nameof(UpdateVersionText));
+        OnPropertyChanged(nameof(UpdateReleaseUrl));
     }
 
     /// <summary>Not an [ObservableProperty]-backed SettingsService member (unlike ViewMode/Theme), so
@@ -84,6 +103,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private static void OpenRepository() =>
         Process.Start(new ProcessStartInfo(RepositoryUrl) { UseShellExecute = true });
+
+    [RelayCommand]
+    private void OpenUpdatePage()
+    {
+        if (UpdateReleaseUrl is { } url) Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
 
     // ---------- Watchlist backup ----------
     // Deliberately scoped to just the watchlist, not every local JSON file under

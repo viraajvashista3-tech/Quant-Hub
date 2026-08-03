@@ -3,6 +3,24 @@
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- In-app update check: once a day, the Settings page shows a quiet banner if a newer version has
+  been published to GitHub Releases, with a one-click link to download it.
+- CI now collects and uploads code coverage as a build artifact.
+
+### Fixed
+- Market Pulse's sector-rotation note could render nonsense like "+-0.3%" on a red week where
+  every sector was down.
+- The Analyst page's recommendation-trend table showed a literal "0m" for the current period
+  instead of "Current".
+- The Peers page's auto-generated comparison summary was lowercasing embedded company names,
+  sector names, and "P/E" mid-sentence (e.g. "Apple Inc." → "Apple inc.").
+- The app window had no icon reachable at runtime (taskbar/title bar/Alt+Tab).
+- `YahooFinanceClient` now retries on HTTP 429/503 instead of treating a rate limit the same as
+  "no data".
+
 ## [1.0.0] — 2026-08-03
 
 First release of the native Windows desktop version.

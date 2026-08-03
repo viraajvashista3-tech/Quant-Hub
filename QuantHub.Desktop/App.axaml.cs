@@ -47,6 +47,7 @@ public partial class App : Application
                     services.AddSingleton<WatchlistService>();
                     services.AddSingleton<UniverseRankingService>();
                     services.AddSingleton<SessionBriefingService>();
+                    services.AddSingleton(_ => new UpdateCheckService(new HttpClient { Timeout = TimeSpan.FromSeconds(10) }));
                     services.AddSingleton<AppState>();
                     services.AddSingleton<TerminalViewModel>();
                     services.AddSingleton<StockWorkspaceViewModel>();
@@ -78,6 +79,10 @@ public partial class App : Application
             // Fire-and-forget: re-sweeps the full universe for the Universe page's Top 20 rankings if
             // the cached sweep is more than ~20 hours old. No-ops (near-instantly) if not due yet.
             _host.Services.GetRequiredService<UniverseRankingService>().RunInBackgroundIfDue();
+
+            // Fire-and-forget: checks GitHub Releases for a newer version once a day, surfaced as a
+            // quiet banner on the Settings page - never an interrupting popup.
+            _host.Services.GetRequiredService<UpdateCheckService>().RunInBackgroundIfDue();
 
             var window = _host.Services.GetRequiredService<ShellWindow>();
             desktop.MainWindow = window;
