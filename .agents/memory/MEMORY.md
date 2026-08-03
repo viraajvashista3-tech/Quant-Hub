@@ -1,2 +1,0 @@
-- [yfinance insider data shape](yfinance-insider.md) — insider_transactions cols; buy/sell inferred from Text field; insider_purchases gives 6m summary
-- [Pro Mode architecture](pro-mode-arch.md) — isPro shows real extra content (BB, Sharpe, quant breakdown, Graham, rec trend), not just label changes; persisted to localStorage
