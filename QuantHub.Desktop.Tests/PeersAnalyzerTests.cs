@@ -7,18 +7,16 @@ public class PeersAnalyzerTests
 {
     [Theory]
     [InlineData("hello world", "Hello world")]
-    [InlineData("HELLO WORLD", "Hello world")]
-    [InlineData("Apple Inc. commands a premium valuation vs its Technology peers", "Apple inc. commands a premium valuation vs its technology peers")]
+    [InlineData("HELLO WORLD", "HELLO WORLD")]
+    [InlineData("Apple Inc. commands a premium valuation vs its Technology peers", "Apple Inc. commands a premium valuation vs its Technology peers")]
     [InlineData("", "")]
-    public void PythonCapitalize_UppercasesFirstCharOnlyAndLowercasesTheRest(string input, string expected)
+    public void CapitalizeFirstLetter_UppercasesFirstCharOnly_LeavesRestUntouched(string input, string expected)
     {
-        // Deliberately mangles embedded proper nouns / abbreviations - this is a quirk of the
-        // original Python's str.capitalize() that must be preserved, not "fixed".
-        Assert.Equal(expected, PeersAnalyzer.PythonCapitalize(input));
+        Assert.Equal(expected, PeersAnalyzer.CapitalizeFirstLetter(input));
     }
 
     [Fact]
-    public void GeneratePeersSummary_PremiumValuationBranch_ExactSentenceAndCapitalizeQuirk()
+    public void GeneratePeersSummary_PremiumValuationBranch_ExactSentence()
     {
         var peers = new List<PeerStock>
         {
@@ -30,10 +28,8 @@ public class PeersAnalyzerTests
         var summary = PeersAnalyzer.GeneratePeersSummary("TEST", peers, "Tech");
 
         // diffPct = (20-10)/10*100 = 100% > 10 -> premium branch.
-        // Raw sentence: "Test Co commands a premium valuation vs its Tech peers (P/E 20.0x vs sector median 10.0x)"
-        // After PythonCapitalize (first char upper, rest lower) + trailing period:
         Assert.Equal(
-            "Test co commands a premium valuation vs its tech peers (p/e 20.0x vs sector median 10.0x).",
+            "Test Co commands a premium valuation vs its Tech peers (P/E 20.0x vs sector median 10.0x).",
             summary);
     }
 
@@ -49,7 +45,7 @@ public class PeersAnalyzerTests
         var summary = PeersAnalyzer.GeneratePeersSummary("TEST", peers, "Tech");
 
         // diffPct = (10.5-10)/10*100 = 5% <= 10 -> "trades in line" branch.
-        Assert.Equal("Test co trades in line with tech peers on valuation (p/e 10.5x).", summary);
+        Assert.Equal("Test Co trades in line with Tech peers on valuation (P/E 10.5x).", summary);
     }
 
     [Fact]

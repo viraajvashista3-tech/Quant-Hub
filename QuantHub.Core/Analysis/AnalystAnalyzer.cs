@@ -5,8 +5,10 @@ using QuantHub.Core.Yahoo;
 namespace QuantHub.Core.Analysis;
 
 /// <summary>Ports the analyst command (stock_data.py lines 516-588), including the consensus-rating
-/// title-casing and the recommendation-trend "0m" label quirk (the "Current" branch is dead code in
-/// the original since "0m" never starts with "-", and is preserved here rather than "fixed").
+/// title-casing. The original's recommendation-trend period labeling had a dead "Current" branch -
+/// Yahoo's period values are "0m"/"-1m"/"-2m"/"-3m", and the original only special-cased a leading
+/// "-", so "0m" (the current month) fell through to the raw string instead of "Current" - fixed here
+/// to parse the magnitude regardless of sign.
 ///
 /// Yahoo's public upgradeDowngradeHistory payload does not reliably expose a price-target delta per
 /// action, so PriceTargetAction/CurrentPriceTarget/PriorPriceTarget are left null here - the schema
@@ -59,16 +61,13 @@ public static class AnalystAnalyzer
             foreach (var row in trendArr.EnumerateArray())
             {
                 var periodRaw = GetString(row, "period") ?? "";
-                string label;
-                if (periodRaw.StartsWith('-'))
+                var monthsAgo = int.TryParse(periodRaw.TrimStart('-').Replace("m", ""), out var m) ? m : (int?)null;
+                var label = monthsAgo switch
                 {
-                    var monthsAgo = int.TryParse(periodRaw.Replace("m", ""), out var m) ? m : 0;
-                    label = monthsAgo != 0 ? $"{Math.Abs(monthsAgo)}mo ago" : "Current";
-                }
-                else
-                {
-                    label = periodRaw;
-                }
+                    0 => "Current",
+                    { } n => $"{n}mo ago",
+                    null => periodRaw
+                };
 
                 trend.Add(new RecommendationTrendPoint
                 {

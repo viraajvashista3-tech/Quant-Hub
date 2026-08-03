@@ -51,10 +51,9 @@ public class AnalystAnalyzerTests
     }
 
     [Fact]
-    public void Build_RecommendationTrend_ZeroMonthPeriodStaysLiteral_NotCurrent()
+    public void Build_RecommendationTrend_ZeroMonthPeriodLabeledCurrent()
     {
-        // "0m" never starts with "-", so it falls to the else branch and keeps the literal
-        // string - the "Current" branch is dead code in the original and must stay that way.
+        // Yahoo's current-month period is "0m" (no leading "-"); previous months are "-1m"/"-2m"/etc.
         var result = Parse("""
         {
             "recommendationTrend": {
@@ -69,9 +68,25 @@ public class AnalystAnalyzerTests
 
         var analyst = AnalystAnalyzer.Build("test", result);
 
-        Assert.Equal("0m", analyst.RecommendationTrend![0].Period);
+        Assert.Equal("Current", analyst.RecommendationTrend![0].Period);
         Assert.Equal("1mo ago", analyst.RecommendationTrend[1].Period);
         Assert.Equal("2mo ago", analyst.RecommendationTrend[2].Period);
+    }
+
+    [Fact]
+    public void Build_RecommendationTrend_UnparseablePeriod_KeepsRawString()
+    {
+        var result = Parse("""
+        {
+            "recommendationTrend": {
+                "trend": [ { "period": "unexpected", "strongBuy": 0, "buy": 0, "hold": 0, "sell": 0, "strongSell": 0 } ]
+            }
+        }
+        """);
+
+        var analyst = AnalystAnalyzer.Build("test", result);
+
+        Assert.Equal("unexpected", analyst.RecommendationTrend![0].Period);
     }
 
     [Fact]

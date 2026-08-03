@@ -115,8 +115,7 @@ public static class PeersAnalyzer
         return sumXY / Math.Sqrt(sumX2 * sumY2);
     }
 
-    /// <summary>Ports generate_peers_summary. Every threshold below is verbatim from the original;
-    /// see PythonCapitalize for the deliberately-preserved str.capitalize() quirk.</summary>
+    /// <summary>Ports generate_peers_summary; thresholds below are verbatim from the original.</summary>
     public static string? GeneratePeersSummary(string ticker, IReadOnlyList<PeerStock> peerData, string sector)
     {
         try
@@ -219,7 +218,7 @@ public static class PeersAnalyzer
                 return $"{name} shows broadly similar characteristics to its {sector} sector peers.";
             }
 
-            return string.Join(". ", parts.Select(PythonCapitalize)) + ".";
+            return string.Join(". ", parts.Select(CapitalizeFirstLetter)) + ".";
         }
         catch
         {
@@ -227,12 +226,11 @@ public static class PeersAnalyzer
         }
     }
 
-    /// <summary>Replicates Python's str.capitalize(): uppercase the first character, lowercase every
-    /// other character. This mangles embedded proper nouns/abbreviations (company names, "P/E") in
-    /// the original - kept exactly as-is rather than "fixed", per the byte-for-byte parity goal.</summary>
-    internal static string PythonCapitalize(string s)
-    {
-        if (string.IsNullOrEmpty(s)) return s;
-        return char.ToUpperInvariant(s[0]) + s[1..].ToLowerInvariant();
-    }
+    /// <summary>Uppercases only the first character so each joined fragment reads as a proper
+    /// sentence start, leaving the rest of the string untouched. The original Python used
+    /// str.capitalize() here, which also lowercases every other character - mangling embedded
+    /// proper nouns/abbreviations (company names, "P/E") throughout each sentence. Fixed, since this
+    /// text is shown directly to users on the Peers page.</summary>
+    internal static string CapitalizeFirstLetter(string s) =>
+        string.IsNullOrEmpty(s) ? s : char.ToUpperInvariant(s[0]) + s[1..];
 }
