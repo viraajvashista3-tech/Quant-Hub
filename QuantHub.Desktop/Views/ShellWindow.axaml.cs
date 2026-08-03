@@ -14,11 +14,17 @@ public partial class ShellWindow : Window
 {
     private readonly ScrollViewer _contentScrollViewer;
 
-    public ShellWindow(ShellViewModel viewModel)
+    public ShellWindow(ShellViewModel viewModel, SettingsService settings)
     {
         AvaloniaXamlLoader.Load(this);
         _contentScrollViewer = this.FindControl<ScrollViewer>("ContentScrollViewer")!;
         DataContext = viewModel;
+
+        Topmost = settings.AlwaysOnTop;
+        settings.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(SettingsService.AlwaysOnTop)) Topmost = settings.AlwaysOnTop;
+        };
 
         // Swapping ContentControl.Content leaves the ScrollViewer at its previous scroll offset,
         // so a page navigated to from partway down a taller page renders with its top clipped

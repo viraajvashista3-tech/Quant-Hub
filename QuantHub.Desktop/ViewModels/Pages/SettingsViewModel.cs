@@ -64,6 +64,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         if (e.PropertyName == nameof(SettingsService.ViewMode)) OnPropertyChanged(nameof(ViewMode));
         if (e.PropertyName == nameof(SettingsService.Theme)) OnPropertyChanged(nameof(Theme));
         if (e.PropertyName == nameof(SettingsService.AutoRefreshInterval)) OnPropertyChanged(nameof(AutoRefreshInterval));
+        if (e.PropertyName == nameof(SettingsService.AlwaysOnTop)) OnPropertyChanged(nameof(AlwaysOnTop));
     }
 
     private void OnUpdateCheckChanged(object? sender, EventArgs e)
@@ -98,6 +99,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     {
         get => _settings.AutoRefreshInterval;
         set => _settings.AutoRefreshInterval = value;
+    }
+
+    public bool AlwaysOnTop
+    {
+        get => _settings.AlwaysOnTop;
+        set => _settings.AlwaysOnTop = value;
     }
 
     [RelayCommand]

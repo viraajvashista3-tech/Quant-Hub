@@ -25,6 +25,18 @@ public class SettingsServiceTests : IDisposable
         Assert.Equal(StartupPage.LastViewed, service.StartupPage);
         Assert.Equal("Terminal", service.LastViewedNavTag);
         Assert.Equal(AutoRefreshInterval.Off, service.AutoRefreshInterval);
+        Assert.False(service.AlwaysOnTop);
+    }
+
+    [Fact]
+    public void AlwaysOnTop_PersistsAcrossInstances()
+    {
+        var service = NewService();
+        service.AlwaysOnTop = true;
+
+        var reloaded = NewService();
+
+        Assert.True(reloaded.AlwaysOnTop);
     }
 
     [Theory]

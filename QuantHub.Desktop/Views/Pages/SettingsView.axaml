@@ -187,6 +187,14 @@
 
     <Border Classes="card">
       <StackPanel>
+        <TextBlock Text="WINDOW" Classes="cardTitle"/>
+        <CheckBox Content="Always on top" IsChecked="{Binding AlwaysOnTop}"
+                  ToolTip.Tip="Keep this window above other apps - handy for a second monitor you check at a glance."/>
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
+      <StackPanel>
         <TextBlock Text="WATCHLIST BACKUP" Classes="cardTitle"/>
         <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,10"
                    Text="Your watchlist lives only on this machine - export it to a file you can keep somewhere safe, or bring it back with Import (merges into whatever's already here, never replaces it)."/>

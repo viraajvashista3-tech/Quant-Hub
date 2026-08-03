@@ -63,6 +63,7 @@ public sealed class AppSettings
     public StartupPage StartupPage { get; set; } = StartupPage.LastViewed;
     public string LastViewedNavTag { get; set; } = "Terminal";
     public AutoRefreshInterval AutoRefreshInterval { get; set; } = AutoRefreshInterval.Off;
+    public bool AlwaysOnTop { get; set; }
 }
 
 /// <summary>Native replacement for ProModeContext/ThemeContext + localStorage: persists view mode,
@@ -146,6 +147,9 @@ public sealed partial class SettingsService : ObservableObject
     [ObservableProperty]
     private AutoRefreshInterval _autoRefreshInterval;
 
+    [ObservableProperty]
+    private bool _alwaysOnTop;
+
     public SettingsService()
         : this(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "QuantHub"))
     {
@@ -167,11 +171,14 @@ public sealed partial class SettingsService : ObservableObject
         StartupPage = loaded.StartupPage;
         LastViewedNavTag = loaded.LastViewedNavTag;
         _autoRefreshInterval = loaded.AutoRefreshInterval;
+        _alwaysOnTop = loaded.AlwaysOnTop;
     }
 
     partial void OnViewModeChanged(ViewMode value) => Save();
 
     partial void OnAutoRefreshIntervalChanged(AutoRefreshInterval value) => Save();
+
+    partial void OnAlwaysOnTopChanged(bool value) => Save();
 
     partial void OnThemeChanged(AppTheme value)
     {
@@ -234,7 +241,8 @@ public sealed partial class SettingsService : ObservableObject
                 LastTicker = LastTicker,
                 StartupPage = StartupPage,
                 LastViewedNavTag = LastViewedNavTag,
-                AutoRefreshInterval = AutoRefreshInterval
+                AutoRefreshInterval = AutoRefreshInterval,
+                AlwaysOnTop = AlwaysOnTop
             };
             var json = JsonSerializer.Serialize(current, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_path, json);
