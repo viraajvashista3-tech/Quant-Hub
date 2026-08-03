@@ -5,6 +5,12 @@ All notable changes to this project are documented here. Format loosely follows
 
 ## [Unreleased]
 
+### Added
+- The app now remembers the last ticker you viewed and reopens on it, instead of always
+  resetting to AAPL.
+- A "Startup Page" setting (Last Viewed / Terminal / Universe / Track Record) - the app can now
+  open wherever you actually want it to.
+
 ## [1.0.0] — 2026-08-03
 
 First release of the native Windows desktop version.
