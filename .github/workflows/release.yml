@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore QuantHub.sln
+
+      - name: Test
+        run: dotnet test QuantHub.sln --configuration Release
+
+      - name: Strip leading 'v' from tag for the assembly version
+        id: version
+        shell: pwsh
+        run: echo "number=$('${{ github.ref_name }}'.TrimStart('v'))" >> $env:GITHUB_OUTPUT
+
+      - name: Publish self-contained win-x64
+        run: >
+          dotnet publish QuantHub.Desktop -c Release -r win-x64
+          -p:Version=${{ steps.version.outputs.number }}
+
+      - name: Zip the published app
+        shell: pwsh
+        run: >
+          Compress-Archive
+          -Path "QuantHub.Desktop/bin/Release/net8.0/win-x64/publish/*"
+          -DestinationPath "QuantTerminal-${{ github.ref_name }}-win-x64.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: QuantTerminal-${{ github.ref_name }}-win-x64.zip
+          generate_release_notes: true

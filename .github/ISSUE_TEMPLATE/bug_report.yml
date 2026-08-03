@@ -1,0 +1,28 @@
+name: Bug report
+description: Something in Quant Terminal isn't working as expected
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Quant Terminal version
+      description: Found on the Settings page (About card)
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+  - type: textarea
+    id: logs
+    attributes:
+      label: Crash log
+      description: If the app crashed, paste the relevant entry from `%LOCALAPPDATA%\QuantHub\crash.log` if one exists
+      render: text
