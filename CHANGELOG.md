@@ -18,6 +18,8 @@ All notable changes to this project are documented here. Format loosely follows
   distinct from the Track Record page's grading of the Quant Score's own calls. Uses the same
   honest, benchmark-relative methodology (excess return vs. the S&P 500 since your entry date) as
   the rest of the app.
+- Portfolio positions can be exported to CSV (same pattern as the Universe page's Watchlist/Top 20
+  exports).
 
 ### Fixed
 - Terminal's "Compare to another ticker" box only ever worked if you clicked a suggestion from

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using QuantHub.Core.Portfolio;
@@ -113,4 +114,28 @@ public sealed partial class PortfolioViewModel : ObservableObject, IRefreshableP
 
     [RelayCommand]
     private void RemovePosition(PositionPerformance position) => _portfolio.RemovePosition(position.Ticker, position.EntryDate);
+
+    /// <summary>CSV export, same left-to-right column order as the on-screen positions table.
+    /// Public static (pure, no I/O) so it's directly unit-testable - the actual file-save dialog is a
+    /// code-behind concern (PortfolioView.axaml.cs), matching UniverseViewModel's
+    /// BuildWatchlistCsv/BuildTop20Csv pattern.</summary>
+    public static string BuildPositionsCsv(IReadOnlyList<PositionPerformance> positions)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Ticker,Shares,EntryPrice,EntryDate,CurrentPrice,MarketValue,GainLoss,GainLoss%,ExcessReturnVsSP500%");
+        foreach (var p in positions)
+        {
+            sb.AppendLine(string.Join(",",
+                CsvField(p.Ticker), p.Shares.ToString("0.####"), p.EntryPrice.ToString("0.00"),
+                p.EntryDate.ToString("yyyy-MM-dd"), p.CurrentPrice.ToString("0.00"), p.MarketValue.ToString("0.00"),
+                p.GainLossDollar.ToString("0.00"), p.GainLossPct.ToString("0.00"), p.ExcessReturnVsBenchmarkPct.ToString("0.00")));
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>RFC 4180 quoting - matches UniverseViewModel.CsvField exactly (tickers never need
+    /// it, kept for consistency/defensiveness rather than because a ticker realistically contains
+    /// a comma).</summary>
+    private static string CsvField(string value) =>
+        value.IndexOfAny([',', '"', '\n', '\r']) < 0 ? value : "\"" + value.Replace("\"", "\"\"") + "\"";
 }
