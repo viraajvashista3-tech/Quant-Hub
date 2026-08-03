@@ -28,11 +28,27 @@ public sealed record AccentColor(string Name, string Hsl, string Label);
 
 public sealed record ViewModeOption(ViewMode Mode, string Label, string Description);
 
+/// <summary>Which page the Shell should show on launch. LastViewed (the default) means "wherever
+/// I was when I closed the app" - the three fixed options are for anyone who always wants to land
+/// on the same page regardless of where they left off.</summary>
+public enum StartupPage
+{
+    LastViewed,
+    Terminal,
+    Universe,
+    TrackRecord
+}
+
+public sealed record StartupPageOption(StartupPage Page, string Label);
+
 public sealed class AppSettings
 {
     public ViewMode ViewMode { get; set; } = ViewMode.Intermediate;
     public AppTheme Theme { get; set; } = AppTheme.Dark;
     public string AccentName { get; set; } = "cyan";
+    public string LastTicker { get; set; } = "AAPL";
+    public StartupPage StartupPage { get; set; } = StartupPage.LastViewed;
+    public string LastViewedNavTag { get; set; } = "Terminal";
 }
 
 /// <summary>Native replacement for ProModeContext/ThemeContext + localStorage: persists view mode,
@@ -63,6 +79,14 @@ public sealed partial class SettingsService : ObservableObject
         new(ViewMode.Pro, "Pro", "Everything in Intermediate plus the score breakdown, Bollinger Bands, and detailed reasoning.")
     };
 
+    public static readonly IReadOnlyList<StartupPageOption> StartupPageOptions = new List<StartupPageOption>
+    {
+        new(StartupPage.LastViewed, "Last Viewed"),
+        new(StartupPage.Terminal, "Terminal"),
+        new(StartupPage.Universe, "Universe"),
+        new(StartupPage.TrackRecord, "Track Record")
+    };
+
     private readonly string _path;
 
     [ObservableProperty]
@@ -73,16 +97,39 @@ public sealed partial class SettingsService : ObservableObject
 
     public string AccentName { get; set; }
 
+    /// <summary>The ticker AppState.ActiveTicker initializes from at startup, and is kept in sync
+    /// with it thereafter - so the app reopens on whatever you were last looking at instead of
+    /// always resetting to AAPL. Plain property (not [ObservableProperty]) since AppState, the only
+    /// thing that changes it, already has its own ActiveTicker change notification; nothing needs a
+    /// second one from here.</summary>
+    public string LastTicker { get; set; }
+
+    public StartupPage StartupPage { get; set; }
+
+    /// <summary>Updated on every nav change regardless of StartupPage, so switching StartupPage to
+    /// LastViewed later doesn't require first revisiting a page for it to have a value.</summary>
+    public string LastViewedNavTag { get; set; }
+
     public SettingsService()
+        : this(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "QuantHub"))
     {
-        var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "QuantHub");
-        Directory.CreateDirectory(dir);
-        _path = Path.Combine(dir, "settings.json");
+    }
+
+    /// <summary>Lets callers (tests) point persistence at a directory other than the real
+    /// %LOCALAPPDATA%\QuantHub, so exercising this doesn't touch a real machine's settings file -
+    /// same pattern as ScoreWeightsService/UpdateCheckService's test-friendly constructors.</summary>
+    public SettingsService(string dataDirectory)
+    {
+        Directory.CreateDirectory(dataDirectory);
+        _path = Path.Combine(dataDirectory, "settings.json");
 
         var loaded = Load();
         _viewMode = loaded.ViewMode;
         _theme = loaded.Theme;
         AccentName = loaded.AccentName;
+        LastTicker = loaded.LastTicker;
+        StartupPage = loaded.StartupPage;
+        LastViewedNavTag = loaded.LastViewedNavTag;
     }
 
     partial void OnViewModeChanged(ViewMode value) => Save();
@@ -140,7 +187,15 @@ public sealed partial class SettingsService : ObservableObject
     {
         try
         {
-            var current = new AppSettings { ViewMode = ViewMode, Theme = Theme, AccentName = AccentName };
+            var current = new AppSettings
+            {
+                ViewMode = ViewMode,
+                Theme = Theme,
+                AccentName = AccentName,
+                LastTicker = LastTicker,
+                StartupPage = StartupPage,
+                LastViewedNavTag = LastViewedNavTag
+            };
             var json = JsonSerializer.Serialize(current, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_path, json);
         }

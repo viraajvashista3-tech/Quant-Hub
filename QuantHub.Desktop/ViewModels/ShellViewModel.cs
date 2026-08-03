@@ -120,9 +120,8 @@ public sealed partial class ShellViewModel : ObservableObject
         _predictionLog = predictionLog;
         _predictionLog.Updated += (_, _) => OnPropertyChanged(nameof(TrackRecordText));
 
-        _selectedNav = NavItems[0];
         _tickerInput = appState.ActiveTicker;
-        _currentPage = _terminal;
+        _currentPage = _terminal; // safe default; overwritten below via the SelectedNav setter if a different startup page was chosen
 
         _appState.PropertyChanged += OnAppStateChanged;
         _settings.PropertyChanged += (_, e) =>
@@ -151,7 +150,24 @@ public sealed partial class ShellViewModel : ObservableObject
         });
 
         WeakReferenceMessenger.Default.Register<WatchlistBriefingMessage>(this, (_, m) => BriefingMessages = m.Changes);
+
+        // Resolved last (property setter, not the backing field) so OnSelectedNavChanged's existing
+        // tag->page switch below is the one and only place that maps a tag to its page - avoids a
+        // second, easy-to-forget-to-update copy of that mapping just for the startup case.
+        var startupTag = ResolveStartupNavTag(_settings.StartupPage, _settings.LastViewedNavTag);
+        SelectedNav = NavItems.FirstOrDefault(n => n.Tag == startupTag) ?? NavItems[0];
     }
+
+    /// <summary>Pure mapping from the Settings page's "Start on" choice to a nav tag - pulled out of
+    /// the constructor so it's directly unit-testable without constructing a full ShellViewModel
+    /// (which needs every page ViewModel as a dependency).</summary>
+    public static string ResolveStartupNavTag(StartupPage startupPage, string lastViewedNavTag) => startupPage switch
+    {
+        StartupPage.Terminal => "Terminal",
+        StartupPage.Universe => "Universe",
+        StartupPage.TrackRecord => "TrackRecord",
+        _ => lastViewedNavTag
+    };
 
     /// <summary>Backs the sidebar ticker AutoCompleteBox's AsyncPopulator (wired in
     /// ShellWindow.axaml.cs code-behind, not a XAML delegate binding).</summary>
@@ -199,6 +215,9 @@ public sealed partial class ShellViewModel : ObservableObject
             "TrackRecord" => _trackRecord,
             _ => throw new InvalidOperationException($"No page registered for nav tag \"{value.Tag}\".")
         };
+
+        _settings.LastViewedNavTag = value.Tag;
+        _settings.Save();
     }
 
     partial void OnCurrentPageChanged(object value) => OnPropertyChanged(nameof(IsSettingsActive));

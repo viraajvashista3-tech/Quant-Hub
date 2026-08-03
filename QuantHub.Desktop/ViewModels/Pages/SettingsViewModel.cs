@@ -29,6 +29,8 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public IReadOnlyList<AccentColor> AccentColors => SettingsService.AccentColors;
 
+    public IReadOnlyList<StartupPageOption> StartupPageOptions => SettingsService.StartupPageOptions;
+
     /// <summary>Reads Directory.Build.props' &lt;Version&gt; at runtime (via the assembly's own
     /// metadata) rather than hardcoding a string here, so a version bump only ever has to happen
     /// in one place.</summary>
@@ -73,6 +75,10 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// OnSettingsChanged above.</summary>
     public string AccentName => _settings.AccentName;
 
+    /// <summary>Same reasoning as AccentName - StartupPage is a plain SettingsService property, so
+    /// this page owns raising its own change notification after SelectStartupPage.</summary>
+    public StartupPage StartupPage => _settings.StartupPage;
+
     public ViewMode ViewMode
     {
         get => _settings.ViewMode;
@@ -98,6 +104,14 @@ public sealed partial class SettingsViewModel : ObservableObject
         _settings.ApplyAccent();
         _settings.Save();
         OnPropertyChanged(nameof(AccentName));
+    }
+
+    [RelayCommand]
+    private void SelectStartupPage(StartupPageOption option)
+    {
+        _settings.StartupPage = option.Page;
+        _settings.Save();
+        OnPropertyChanged(nameof(StartupPage));
     }
 
     [RelayCommand]
