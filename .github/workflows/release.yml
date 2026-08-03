@@ -42,8 +42,17 @@ jobs:
           -Path "QuantHub.Desktop/bin/Release/net8.0/win-x64/publish/*"
           -DestinationPath "QuantTerminal-${{ github.ref_name }}-win-x64.zip"
 
+      - name: Build installer (Inno Setup)
+        shell: pwsh
+        run: >
+          iscc installer/QuantTerminal.iss
+          "/DMyAppVersion=${{ steps.version.outputs.number }}"
+          "/DPublishDir=../QuantHub.Desktop/bin/Release/net8.0/win-x64/publish"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: QuantTerminal-${{ github.ref_name }}-win-x64.zip
+          files: |
+            QuantTerminal-${{ github.ref_name }}-win-x64.zip
+            installer/output/QuantTerminalSetup-${{ steps.version.outputs.number }}.exe
           generate_release_notes: true

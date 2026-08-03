@@ -27,6 +27,9 @@ First release of the native Windows desktop version.
 - Version metadata, an About card (Settings page), and crash logging to
   `%LOCALAPPDATA%\QuantHub\crash.log`.
 - CI (GitHub Actions): build + full test suite on every push/PR to `main`.
+- Tag-triggered release pipeline: publishes a self-contained win-x64 build as both a portable
+  zip and a proper Inno Setup installer (Start Menu shortcut, uninstaller), attached to an
+  auto-generated GitHub Release.
 
 ### Changed
 - Repositioned the app around transparency rather than prediction confidence: hero copy is

@@ -5,6 +5,9 @@ publish/
 *.user
 *.suo
 
+# Inno Setup output
+installer/output/
+
 # Test results
 [Tt]est[Rr]esult*/
 *.trx

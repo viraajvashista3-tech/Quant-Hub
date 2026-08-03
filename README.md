@@ -64,6 +64,13 @@ Pro difficulty mode that controls how much statistical detail each page shows.
 
 ## Getting started
 
+### Download
+
+Grab the latest installer or portable zip from the
+[Releases page](https://github.com/viraajvashista3-tech/Quant-Hub/releases) — no .NET runtime
+install required, no API keys to configure. Every tagged release is built and published
+automatically by [`.github/workflows/release.yml`](.github/workflows/release.yml).
+
 ### Run from source
 
 Requires the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) on Windows.
