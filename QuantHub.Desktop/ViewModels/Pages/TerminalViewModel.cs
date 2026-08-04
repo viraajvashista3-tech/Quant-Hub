@@ -7,6 +7,7 @@ using LiveChartsCore;
 using LiveChartsCore.Defaults;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
+using QuantHub.Core.Alerts;
 using QuantHub.Core.Analysis;
 using QuantHub.Core.Backtesting;
 using QuantHub.Core.Models;
@@ -40,6 +41,7 @@ public sealed partial class TerminalViewModel : ObservableObject, IRefreshablePa
     private readonly SettingsService _settings;
     private readonly ScoreWeightsService _scoreWeights;
     private readonly PredictionLogService _predictionLog;
+    private readonly AlertService _alerts;
 
     public IReadOnlyList<PeriodOption> Periods { get; } =
     [
@@ -85,6 +87,17 @@ public sealed partial class TerminalViewModel : ObservableObject, IRefreshablePa
 
     [ObservableProperty]
     private string? _compareTicker;
+
+    [ObservableProperty]
+    private IReadOnlyList<PriceAlert> _activeAlerts = [];
+
+    [ObservableProperty]
+    private string _newAlertPrice = "";
+
+    [ObservableProperty]
+    private AlertDirection _newAlertDirection = AlertDirection.Above;
+
+    public string NewAlertDirectionLabel => NewAlertDirection == AlertDirection.Above ? "Above ▲" : "Below ▼";
 
     [ObservableProperty]
     private string? _newsSentimentLabel;
@@ -134,13 +147,14 @@ public sealed partial class TerminalViewModel : ObservableObject, IRefreshablePa
     };
 
     public TerminalViewModel(AppState appState, StockAnalysisService stockAnalysis, SettingsService settings,
-        ScoreWeightsService scoreWeights, PredictionLogService predictionLog)
+        ScoreWeightsService scoreWeights, PredictionLogService predictionLog, AlertService alerts)
     {
         _appState = appState;
         _stockAnalysis = stockAnalysis;
         _settings = settings;
         _scoreWeights = scoreWeights;
         _predictionLog = predictionLog;
+        _alerts = alerts;
         _selectedPeriod = Periods[2];
 
         _appState.PropertyChanged += (_, e) =>
@@ -174,6 +188,15 @@ public sealed partial class TerminalViewModel : ObservableObject, IRefreshablePa
         // catches the moment it actually lands (and any later maturity evaluation) so the sparkline
         // picks up today's point without needing a full page reload.
         _predictionLog.Updated += (_, _) => BuildScoreHistory();
+
+        // A triggered alert stops being "active" - refresh the list if it belongs to whichever
+        // ticker is currently on screen (a background CheckAllAsync sweep, or another page's
+        // opportunistic CheckTicker call via CompareTicker, could trigger one for a ticker that
+        // isn't the active one, which this page has nothing to update for).
+        _alerts.Triggered += (_, triggered) =>
+        {
+            if (Overview is { } o && triggered.Any(a => a.Ticker == o.Ticker)) RefreshActiveAlerts();
+        };
 
         _compareDebounce.Tick += (_, _) =>
         {
@@ -251,6 +274,32 @@ public sealed partial class TerminalViewModel : ObservableObject, IRefreshablePa
         BuildCharts(_lastHistory);
     }
 
+    private void RefreshActiveAlerts() => ActiveAlerts = Overview is { } o ? _alerts.ActiveAlertsFor(o.Ticker) : [];
+
+    partial void OnNewAlertDirectionChanged(AlertDirection value) => OnPropertyChanged(nameof(NewAlertDirectionLabel));
+
+    [RelayCommand]
+    private void ToggleAlertDirection() =>
+        NewAlertDirection = NewAlertDirection == AlertDirection.Above ? AlertDirection.Below : AlertDirection.Above;
+
+    [RelayCommand]
+    private void SetAlert()
+    {
+        if (Overview is not { } overview) return;
+        if (!double.TryParse(NewAlertPrice, out var price) || price <= 0) return;
+
+        _alerts.AddAlert(overview.Ticker, NewAlertDirection, price);
+        NewAlertPrice = "";
+        RefreshActiveAlerts();
+    }
+
+    [RelayCommand]
+    private void RemoveAlert(PriceAlert alert)
+    {
+        _alerts.RemoveAlert(alert.Id);
+        RefreshActiveAlerts();
+    }
+
     /// <summary>Cancels any in-flight load before starting a new one, so a slower request for a
     /// ticker the user has already moved on from can never overwrite the UI with stale results.</summary>
     private async Task LoadAsync()
@@ -313,6 +362,11 @@ public sealed partial class TerminalViewModel : ObservableObject, IRefreshablePa
             BuildScoreHistory();
             RecommendationLine = BuildRecommendationLine(Overview, _analystData);
             _predictionLog.LogInBackground(Overview);
+
+            // Free (no extra network call): reuses the price this load already fetched instead of
+            // AlertService needing its own poll loop for whatever ticker is actively being viewed.
+            _alerts.CheckTicker(Overview.Ticker, Overview.Price);
+            RefreshActiveAlerts();
 
             var maxHeadlines = _settings.ViewMode switch { ViewMode.Pro => 8, ViewMode.Intermediate => 6, _ => 4 };
             var news = newsTask.Result;

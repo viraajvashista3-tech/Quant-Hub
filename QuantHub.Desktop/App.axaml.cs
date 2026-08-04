@@ -46,6 +46,7 @@ public partial class App : Application
                     services.AddSingleton<PredictionLogService>();
                     services.AddSingleton<WatchlistService>();
                     services.AddSingleton<PortfolioService>();
+                    services.AddSingleton<AlertService>();
                     services.AddSingleton<UniverseRankingService>();
                     services.AddSingleton<SessionBriefingService>();
                     services.AddSingleton(_ => new UpdateCheckService(new HttpClient { Timeout = TimeSpan.FromSeconds(10) }));
@@ -85,6 +86,12 @@ public partial class App : Application
             // Fire-and-forget: checks GitHub Releases for a newer version once a day, surfaced as a
             // quiet banner on the Settings page - never an interrupting popup.
             _host.Services.GetRequiredService<UpdateCheckService>().RunInBackgroundIfDue();
+
+            // Fire-and-forget: sweeps every ticker with an active price alert once at startup, for
+            // tickers not currently being viewed - Terminal's own page loads check the active ticker
+            // opportunistically (AlertService.CheckTicker) with no extra network call, so this only
+            // needs to cover the rest.
+            _host.Services.GetRequiredService<AlertService>().CheckAllInBackground();
 
             var window = _host.Services.GetRequiredService<ShellWindow>();
             desktop.MainWindow = window;

@@ -3,6 +3,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using QuantHub.Core.Alerts;
 using QuantHub.Core.Backtesting;
 using QuantHub.Core.Models;
 using QuantHub.Core.Services;
@@ -34,6 +35,9 @@ public sealed partial class ShellViewModel : ObservableObject
     private readonly TrackRecordViewModel _trackRecord;
     private readonly PortfolioViewModel _portfolio;
     private readonly PredictionLogService _predictionLog;
+    private readonly AlertService _alerts;
+    private IReadOnlyList<string> _watchlistChanges = [];
+    private IReadOnlyList<string> _triggeredAlertMessages = [];
     private readonly DispatcherTimer _tickerDebounce = new() { Interval = TimeSpan.FromMilliseconds(350) };
     private readonly DispatcherTimer _autoRefreshTimer = new();
 
@@ -107,7 +111,8 @@ public sealed partial class ShellViewModel : ObservableObject
         SettingsViewModel settingsPage,
         TrackRecordViewModel trackRecord,
         PortfolioViewModel portfolio,
-        PredictionLogService predictionLog)
+        PredictionLogService predictionLog,
+        AlertService alerts)
     {
         _appState = appState;
         _settings = settings;
@@ -123,7 +128,15 @@ public sealed partial class ShellViewModel : ObservableObject
         _portfolio = portfolio;
         _trackRecord = trackRecord;
         _predictionLog = predictionLog;
+        _alerts = alerts;
         _predictionLog.Updated += (_, _) => OnPropertyChanged(nameof(TrackRecordText));
+        // Folded into the same "what changed" banner as watchlist signal changes below (RefreshBriefing)
+        // rather than a second, separate banner - one place to look, not two.
+        _alerts.Triggered += (_, triggered) =>
+        {
+            _triggeredAlertMessages = [.. _triggeredAlertMessages, .. triggered.Select(AlertEvaluator.FormatTriggerMessage)];
+            RefreshBriefing();
+        };
 
         _tickerInput = appState.ActiveTicker;
         _currentPage = _terminal; // safe default; overwritten below via the SelectedNav setter if a different startup page was chosen
@@ -160,7 +173,11 @@ public sealed partial class ShellViewModel : ObservableObject
             SelectedNav = NavItems[0];
         });
 
-        WeakReferenceMessenger.Default.Register<WatchlistBriefingMessage>(this, (_, m) => BriefingMessages = m.Changes);
+        WeakReferenceMessenger.Default.Register<WatchlistBriefingMessage>(this, (_, m) =>
+        {
+            _watchlistChanges = m.Changes;
+            RefreshBriefing();
+        });
 
         // Resolved last (property setter, not the backing field) so OnSelectedNavChanged's existing
         // tag->page switch below is the one and only place that maps a tag to its page - avoids a
@@ -236,8 +253,15 @@ public sealed partial class ShellViewModel : ObservableObject
 
     partial void OnBriefingMessagesChanged(IReadOnlyList<string> value) => OnPropertyChanged(nameof(HasBriefing));
 
+    private void RefreshBriefing() => BriefingMessages = [.. _watchlistChanges, .. _triggeredAlertMessages];
+
     [RelayCommand]
-    private void DismissBriefing() => BriefingMessages = [];
+    private void DismissBriefing()
+    {
+        _watchlistChanges = [];
+        _triggeredAlertMessages = [];
+        BriefingMessages = [];
+    }
 
     [RelayCommand]
     private void SelectViewMode(ViewModeOption option) => _settings.ViewMode = option.Mode;

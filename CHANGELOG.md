@@ -20,6 +20,10 @@ All notable changes to this project are documented here. Format loosely follows
   the rest of the app.
 - Portfolio positions can be exported to CSV (same pattern as the Universe page's Watchlist/Top 20
   exports).
+- **Price alerts** - set a "notify me when price is above/below $X" alert on the Terminal page for
+  any ticker. Checked opportunistically off data the page already fetches (no dedicated poll
+  loop), plus a startup sweep for tickers not currently being viewed. Triggered alerts show up in
+  the same sidebar "what changed" banner as watchlist signal changes.
 
 ### Fixed
 - Terminal's "Compare to another ticker" box only ever worked if you clicked a suggestion from

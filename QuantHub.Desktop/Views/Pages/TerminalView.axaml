@@ -57,6 +57,43 @@
       </StackPanel>
     </Grid>
 
+    <!-- Price alerts - active alerts as removable chips, plus a compact inline "set new" row.
+         Checked opportunistically off this page's own already-fetched price (TerminalViewModel.
+         LoadAsync), not a separate poll loop. -->
+    <Grid Margin="0,0,0,16" ColumnDefinitions="Auto,*">
+      <TextBlock Grid.Column="0" Text="🔔" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+      <StackPanel Grid.Column="1" Orientation="Horizontal">
+        <ItemsControl ItemsSource="{Binding ActiveAlerts}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal"/>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Border Classes="chip" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource PanelBorderBrush}"
+                      BorderThickness="1" Margin="0,0,8,0" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="{Binding Direction}" Classes="chipText" Foreground="{DynamicResource TextBrush}"/>
+                  <TextBlock Text="{Binding TargetPrice, StringFormat=' ${0:0.00}'}" Classes="chipText" Foreground="{DynamicResource TextBrush}"/>
+                  <Button Content="✕" Padding="4,0" Margin="6,0,0,0" Background="Transparent" BorderThickness="0"
+                          FontWeight="Bold" Cursor="Hand" ToolTip.Tip="Remove this alert"
+                          Command="{Binding DataContext.RemoveAlertCommand, ElementName=Root}" CommandParameter="{Binding}"/>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <TextBox Text="{Binding NewAlertPrice}" Watermark="Alert price" Width="90" FontSize="12"
+                 Padding="8,4" Margin="0,0,6,0" VerticalAlignment="Center"/>
+        <Button Content="{Binding NewAlertDirectionLabel}" Command="{Binding ToggleAlertDirectionCommand}"
+                Padding="8,4" FontSize="12" Margin="0,0,6,0"
+                ToolTip.Tip="Click to switch between Above and Below"/>
+        <Button Content="Set Alert" Classes="primary" Command="{Binding SetAlertCommand}" Padding="10,4" FontSize="12"/>
+      </StackPanel>
+    </Grid>
+
     <!-- Recommendation - one concrete, numbers-included sentence (score + analyst consensus/upside
          when available), shown at all three tiers unlike the generic HeroSentence banner below. -->
     <Border Classes="card" BorderThickness="4,1,1,1"
